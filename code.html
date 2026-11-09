@@ -1,0 +1,4289 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Programer Help — Онлайн редактор</title>
+
+    <!-- Monaco Editor loader -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.2/min/vs/loader.min.js"></script>
+
+    <style>
+        /* ---------- Тёмная тема (как VS Code Dark+) ---------- */
+        :root {
+            --bg: #1e1e1e;
+            --side: #252526;
+            --act: #333333;
+            --title: #3c3c3c;
+            --tabbar: #252526;
+            --tab: #2d2d2d;
+            --tabActive: #1e1e1e;
+            --border: #2b2b2b;
+            --fg: #cccccc;
+            --fgBright: #ffffff;
+            --fgDim: #858585;
+            --hover: #2a2d2e;
+            --sel: #37373d;
+            --status: #007acc;
+            --accent: #0e639c;
+            --accent2: #007fd4;
+            --ok: #89d185;
+            --err: #f48771;
+            --warn: #cca700;
+            --toast: #252526;
+            --menu: #252526;
+        }
+
+        /* ---------- Светлая тема ---------- */
+        body.light {
+            --bg: #ffffff;
+            --side: #f3f3f3;
+            --act: #2c2c2c;
+            --title: #dddddd;
+            --tabbar: #f3f3f3;
+            --tab: #ececec;
+            --tabActive: #ffffff;
+            --border: #e5e5e5;
+            --fg: #333333;
+            --fgBright: #000000;
+            --fgDim: #6e7681;
+            --hover: #e8e8e8;
+            --sel: #e4e6f1;
+            --ok: #2e7d32;
+            --err: #c62828;
+            --warn: #bf8803;
+            --toast: #f3f3f3;
+            --menu: #f3f3f3;
+        }
+
+        * { box-sizing: border-box; }
+
+        html, body { height: 100%; }
+
+        body {
+            margin: 0;
+            font-family: "Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+            font-size: 13px;
+            background: var(--bg);
+            color: var(--fg);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        button { font-family: inherit; }
+        [hidden] { display: none !important; }
+
+        /* ---------- Экзамен ---------- */
+        #examBar {
+            flex: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+            padding: 6px 12px;
+            background: #2d1b4e;
+            border-left: 3px solid #a855f7;
+            color: #e9d5ff;
+        }
+
+        body.light #examBar { background: #f3e8ff; color: #581c87; }
+
+        #examBar .ex-title { font-weight: 700; }
+        #exTime { font-family: Consolas, monospace; font-weight: 700; font-size: 15px; }
+        #exDots { display: flex; gap: 6px; }
+
+        #exDots span {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: 2px solid #a855f7;
+        }
+
+        #exDots span.cur { background: #a855f7; }
+        #exDots span.ok { background: #22c55e; border-color: #22c55e; }
+
+        #examOverlay {
+            position: fixed;
+            top: 0; right: 0; bottom: 0; left: 0;
+            z-index: 200;
+            background: rgba(0, 0, 0, 0.65);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+        }
+
+        .ex-card {
+            background: var(--side);
+            color: var(--fg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 26px;
+            width: 100%;
+            max-width: 480px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .ex-card h2 { margin: 0 0 6px; font-size: 24px; color: var(--fgBright); }
+        .ex-card .ex-sub { color: var(--fgDim); margin-bottom: 14px; }
+        .ex-card .ex-row { padding: 5px 0; line-height: 1.5; }
+        .ex-card .ex-row.ok { color: var(--ok); }
+        .ex-card .ex-row.bad { color: var(--err); }
+        .ex-card .ex-gain { margin-top: 10px; font-weight: 700; color: #fbbf24; }
+        .ex-card .ex-btns { display: flex; gap: 10px; margin-top: 18px; flex-wrap: wrap; }
+
+        body.dragging { user-select: none; }
+        body.dragging iframe { pointer-events: none; }
+
+        /* ---------- Верхняя строка ---------- */
+        #titlebar {
+            height: 30px;
+            flex: none;
+            background: var(--title);
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            gap: 6px;
+            position: relative;
+            user-select: none;
+        }
+
+        .logo {
+            color: #3794ff;
+            font-weight: bold;
+            font-family: Consolas, monospace;
+            margin-right: 6px;
+        }
+
+        .menus { display: flex; }
+
+        .menu-btn {
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            color: var(--fg);
+        }
+
+        .menu-btn:hover, .menu-btn.open { background: rgba(128, 128, 128, 0.3); }
+
+        .tb-title {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            color: var(--fgDim);
+            pointer-events: none;
+            white-space: nowrap;
+        }
+
+        .tb-right { margin-left: auto; }
+
+        .tb-right a {
+            color: var(--fg);
+            text-decoration: none;
+            padding: 4px 10px;
+            border-radius: 4px;
+        }
+
+        .tb-right a:hover { background: rgba(128, 128, 128, 0.3); }
+
+        /* ---------- Основная область ---------- */
+        #main { flex: 1; display: flex; min-height: 0; position: relative; }
+
+        #activity {
+            width: 48px;
+            flex: none;
+            background: var(--act);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding-top: 2px;
+        }
+
+        .act {
+            width: 48px;
+            height: 48px;
+            background: none;
+            border: none;
+            border-left: 2px solid transparent;
+            color: #858585;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+
+        .act svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linejoin: round; }
+        .act:hover { color: #ffffff; }
+        .act.active { color: #ffffff; border-left-color: #ffffff; }
+        .spacer { flex: 1; }
+
+        /* ---------- Боковая панель ---------- */
+        #sidebar {
+            width: 260px;
+            flex: none;
+            background: var(--side);
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            overflow: hidden;
+        }
+
+        .sb-title {
+            padding: 10px 20px;
+            font-size: 11px;
+            letter-spacing: 0.5px;
+            color: var(--fgDim);
+            text-transform: uppercase;
+        }
+
+        .sb-scroll { flex: 1; overflow-y: auto; overflow-x: hidden; }
+
+        .sec-head {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 3px 8px;
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            cursor: pointer;
+            border-top: 1px solid var(--border);
+            color: var(--fg);
+            user-select: none;
+        }
+
+        .sec-head:hover { background: var(--hover); }
+
+        .tree-row {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 3px 8px 3px 14px;
+            cursor: pointer;
+            white-space: nowrap;
+            overflow: hidden;
+            user-select: none;
+            line-height: 22px;
+        }
+
+        .tree-row .lbl { overflow: hidden; text-overflow: ellipsis; flex: 1; }
+        .tree-row:hover { background: var(--hover); }
+        .tree-row.active { background: var(--sel); color: var(--fgBright); }
+        .tree-row.child { padding-left: 38px; }
+        .tree-row .count { color: var(--fgDim); font-size: 11px; }
+        .tree-row .done { color: var(--ok); }
+        .tree-row .todo { color: var(--fgDim); }
+        .tree-row.folder { font-weight: 600; }
+
+        .progress { height: 3px; background: var(--border); margin: 6px 14px 8px; border-radius: 2px; overflow: hidden; }
+        #progressFill { height: 100%; width: 0; background: var(--ok); transition: width 0.4s; }
+
+        /* значки файлов */
+        .fi {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 18px;
+            height: 16px;
+            padding: 0 2px;
+            border-radius: 3px;
+            font-size: 9px;
+            font-weight: 800;
+            font-family: Consolas, monospace;
+            flex: none;
+        }
+
+        .fi-html { color: #e44d26; }
+        .fi-css { color: #42a5f5; }
+        .fi-js { color: #f1c40f; }
+
+        /* ---------- Рабочая область ---------- */
+        #workbench { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+        #top { flex: 1; display: flex; min-height: 0; }
+
+        #editorArea { flex: 1; display: flex; flex-direction: column; min-width: 0; background: var(--bg); }
+
+        #tabbar {
+            display: flex;
+            align-items: stretch;
+            background: var(--tabbar);
+            height: 35px;
+            flex: none;
+        }
+
+        #tabs { display: flex; flex: 1; overflow-x: auto; scrollbar-width: none; }
+
+        .tab {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            padding: 0 14px;
+            background: var(--tab);
+            color: var(--fgDim);
+            cursor: pointer;
+            border-right: 1px solid var(--border);
+            border-top: 1px solid transparent;
+            white-space: nowrap;
+            user-select: none;
+        }
+
+        .tab:hover { color: var(--fg); }
+        .tab.active { background: var(--tabActive); color: var(--fgBright); border-top-color: var(--accent2); }
+
+        .tab-actions { display: flex; align-items: center; gap: 2px; padding: 0 8px; }
+
+        .icon-btn {
+            background: none;
+            border: none;
+            color: var(--fg);
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .icon-btn:hover { background: rgba(128, 128, 128, 0.3); }
+        .icon-btn.run { color: #89d185; }
+        .icon-btn.chk { color: #4fc1ff; font-size: 13px; }
+
+        #crumbs {
+            height: 22px;
+            flex: none;
+            display: flex;
+            align-items: center;
+            padding: 0 14px;
+            color: var(--fgDim);
+            font-size: 12px;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+
+        /* баннер задания */
+        #taskBanner {
+            flex: none;
+            background: var(--side);
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+            border-left: 3px solid #fbbf24;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        #tbHead {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 12px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        #tbHead .chev { color: var(--fgDim); width: 12px; }
+        #tbTitle { font-weight: 700; color: #fbbf24; flex: 1; }
+        body.light #tbTitle { color: #b45309; }
+
+        .mini-btn {
+            background: var(--tab);
+            color: var(--fg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 3px 9px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+
+        .mini-btn:hover { background: var(--hover); }
+        .mini-btn.primary { background: var(--accent); color: #ffffff; border-color: var(--accent); }
+
+        #tbText {
+            padding: 0 14px 10px 33px;
+            white-space: pre-line;
+            line-height: 1.55;
+            color: var(--fg);
+        }
+
+        #tbHint {
+            margin: 0 14px 10px 33px;
+            padding: 8px 10px;
+            background: rgba(204, 167, 0, 0.12);
+            border-left: 3px solid var(--warn);
+            white-space: pre-wrap;
+            font-family: Consolas, monospace;
+            font-size: 12.5px;
+            line-height: 1.5;
+        }
+
+        #taskBanner.collapsed #tbText,
+        #taskBanner.collapsed #tbHint { display: none; }
+
+        #editorWrap { flex: 1; position: relative; min-height: 80px; }
+        #editor { position: absolute; top: 0; right: 0; bottom: 0; left: 0; }
+
+        /* ---------- Предпросмотр ---------- */
+        #previewArea {
+            width: 42%;
+            flex: none;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            border-left: 1px solid var(--border);
+            background: var(--bg);
+        }
+
+        .pv-head {
+            height: 35px;
+            flex: none;
+            background: var(--tabbar);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 0 10px;
+        }
+
+        .pv-title { color: var(--fgDim); font-size: 11px; text-transform: uppercase; letter-spacing: 0.3px; }
+
+        .pv-url {
+            flex: 1;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            padding: 3px 10px;
+            color: var(--fgDim);
+            font-size: 12px;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+        }
+
+        #preview { flex: 1; width: 100%; border: 0; background: #ffffff; }
+
+        iframe.checker {
+            position: fixed;
+            left: -9999px;
+            top: 0;
+            width: 800px;
+            height: 600px;
+            visibility: hidden;
+        }
+
+        /* ---------- Разделители ---------- */
+        .resizer { flex: none; position: relative; z-index: 5; background: transparent; }
+        .resizer.v { width: 5px; margin: 0 -2px; cursor: col-resize; }
+        .resizer.h { height: 5px; margin: -2px 0; cursor: row-resize; }
+        .resizer:hover, body.dragging .resizer.active { background: var(--accent2); }
+
+        /* ---------- Нижняя панель ---------- */
+        #panel {
+            height: 175px;
+            flex: none;
+            display: flex;
+            flex-direction: column;
+            border-top: 1px solid var(--border);
+            background: var(--bg);
+            min-height: 0;
+        }
+
+        .panel-head { display: flex; align-items: center; height: 35px; flex: none; padding: 0 8px; }
+        .ptabs { display: flex; flex: 1; gap: 4px; }
+
+        .pt {
+            padding: 7px 10px 5px;
+            cursor: pointer;
+            font-size: 11px;
+            letter-spacing: 0.3px;
+            border-bottom: 1px solid transparent;
+            color: var(--fgDim);
+            user-select: none;
+        }
+
+        .pt:hover { color: var(--fg); }
+        .pt.active { color: var(--fgBright); border-bottom-color: var(--fg); }
+
+        .badge {
+            display: inline-block;
+            min-width: 16px;
+            margin-left: 5px;
+            padding: 0 5px;
+            border-radius: 8px;
+            background: var(--accent);
+            color: #ffffff;
+            font-size: 10px;
+            text-align: center;
+        }
+
+        .panel-body { flex: 1; overflow: auto; padding: 6px 14px 10px; min-height: 0; }
+
+        .p-empty { color: var(--fgDim); padding: 4px 0; }
+
+        .cl { font-family: Consolas, "Courier New", monospace; white-space: pre-wrap; padding: 1px 0; }
+        .cl.error { color: var(--err); }
+        .cl.warn { color: var(--warn); }
+
+        .prob { display: flex; gap: 8px; padding: 2px 0; cursor: pointer; }
+        .prob:hover { background: var(--hover); }
+        .prob .src { color: var(--fgDim); }
+
+        .res-title { font-weight: 700; margin-bottom: 6px; font-size: 14px; }
+        .res-title.ok { color: var(--ok); }
+        .res-title.fail { color: var(--err); }
+        .res-list { line-height: 1.8; }
+        .res-list .ok { color: var(--ok); }
+        .res-list .bad { color: var(--err); }
+
+        .next-btn {
+            margin-top: 8px;
+            background: #fbbf24;
+            color: #1e1e1e;
+            font-weight: 700;
+            border: none;
+            border-radius: 4px;
+            padding: 8px 14px;
+            cursor: pointer;
+        }
+
+        /* ---------- Строка состояния ---------- */
+        #statusbar {
+            height: 22px;
+            flex: none;
+            background: var(--status);
+            color: #ffffff;
+            display: flex;
+            align-items: center;
+            padding: 0 6px;
+            font-size: 12px;
+            user-select: none;
+        }
+
+        .sb-item { padding: 0 8px; height: 100%; display: flex; align-items: center; cursor: pointer; white-space: nowrap; }
+        .sb-item:hover { background: rgba(255, 255, 255, 0.18); }
+        .sb-gap { flex: 1; }
+
+        /* ---------- Меню и уведомления ---------- */
+        #dropdown {
+            position: fixed;
+            z-index: 100;
+            min-width: 230px;
+            background: var(--menu);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+            padding: 4px 0;
+        }
+
+        .dd-item { display: flex; justify-content: space-between; gap: 24px; padding: 5px 18px; cursor: pointer; color: var(--fg); }
+        .dd-item:hover { background: var(--accent); color: #ffffff; }
+        .dd-key { color: var(--fgDim); }
+        .dd-item:hover .dd-key { color: #dddddd; }
+        .dd-sep { height: 1px; background: var(--border); margin: 4px 0; }
+
+        #toasts {
+            position: fixed;
+            right: 14px;
+            bottom: 34px;
+            z-index: 90;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            align-items: flex-end;
+        }
+
+        .toast {
+            background: var(--toast);
+            color: var(--fg);
+            border: 1px solid var(--border);
+            border-left: 4px solid var(--accent2);
+            border-radius: 4px;
+            padding: 10px 14px;
+            max-width: 360px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+            line-height: 1.5;
+        }
+
+        .toast.good { border-left-color: var(--ok); }
+        .toast button { margin-top: 8px; margin-right: 6px; }
+
+        /* ---------- Телефоны и узкие экраны ---------- */
+        @media (max-width: 800px) {
+            .tb-title { display: none; }
+            #activity { width: 40px; }
+            .act { width: 40px; height: 42px; }
+
+            #sidebar {
+                position: absolute;
+                z-index: 20;
+                left: 40px;
+                top: 0;
+                bottom: 0;
+                width: 270px;
+                box-shadow: 4px 0 16px rgba(0, 0, 0, 0.5);
+            }
+
+            #top { flex-direction: column; }
+            #previewArea { width: 100% !important; height: 240px; flex: none; border-left: 0; border-top: 1px solid var(--border); }
+            .resizer.v { display: none; }
+            #panel { height: 130px; }
+            .menus .menu-btn { padding: 4px 6px; }
+            .sb-hide-mobile { display: none; }
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- Верхняя строка с меню -->
+<div id="titlebar">
+    <span class="logo">&lt;/&gt;</span>
+    <div class="menus" id="menus"></div>
+    <div class="tb-title" id="titleText">Programer Help</div>
+    <div class="tb-right"><a href="lessons.html">← К урокам</a></div>
+</div>
+
+<div id="main">
+
+    <!-- Панель значков -->
+    <div id="activity">
+        <button class="act active" id="actExplorer" title="Проводник (Ctrl+B)">
+            <svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></svg>
+        </button>
+        <button class="act" id="actQuests" title="Квесты">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/></svg>
+        </button>
+        <button class="act" id="actRun" title="Запустить (Ctrl+Enter)">
+            <svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg>
+        </button>
+        <span class="spacer"></span>
+        <button class="act" id="actSettings" title="Настройки">⚙</button>
+    </div>
+
+    <!-- Боковая панель -->
+    <div id="sidebar">
+        <div class="sb-title">Проводник</div>
+        <div class="sb-scroll">
+            <div class="sec-head" id="headFiles"><span id="chevFiles">▾</span> Programer-Help</div>
+            <div id="fileList"></div>
+
+            <div class="sec-head" id="headQuests"><span id="chevQuests">▾</span> Квесты</div>
+            <div id="questSection">
+                <div class="progress"><div id="progressFill"></div></div>
+                <div id="questTree"></div>
+            </div>
+        </div>
+    </div>
+    <div class="resizer v" id="rzSidebar"></div>
+
+    <!-- Рабочая область -->
+    <div id="workbench">
+
+        <div id="top">
+
+            <div id="editorArea">
+
+                <div id="tabbar">
+                    <div id="tabs"></div>
+                    <div class="tab-actions">
+                        <button class="icon-btn chk" id="btnCheck" title="Проверить задание" hidden>✔ Проверить</button>
+                        <button class="icon-btn" id="btnShare" title="Поделиться ссылкой на код">🔗</button>
+                        <button class="icon-btn run" id="btnRun" title="Запустить (Ctrl+Enter)">▶</button>
+                    </div>
+                </div>
+
+                <div id="crumbs"></div>
+
+                <div id="examBar" hidden>
+                    <span class="ex-title">🎯 Экзамен</span>
+                    <span id="exInfo"></span>
+                    <span id="exDots"></span>
+                    <span id="exTime">20:00</span>
+                    <span class="spacer"></span>
+                    <button class="mini-btn" id="exSkip">Пропустить →</button>
+                    <button class="mini-btn" id="exFinish">Завершить</button>
+                </div>
+
+                <div id="taskBanner" hidden>
+                    <div id="tbHead">
+                        <span class="chev" id="tbChev">▾</span>
+                        <span id="tbTitle"></span>
+                        <button class="mini-btn" id="tbHintBtn">💡 Подсказка</button>
+                        <button class="mini-btn" id="tbResetBtn">↺ Сначала</button>
+                        <button class="mini-btn" id="tbBugBtn">🐞 Ошибка?</button>
+                    </div>
+                    <div id="tbText"></div>
+                    <div id="tbHint" hidden></div>
+                </div>
+
+                <div id="editorWrap"><div id="editor"></div></div>
+            </div>
+
+            <div class="resizer v" id="rzPreview"></div>
+
+            <div id="previewArea">
+                <div class="pv-head">
+                    <span class="pv-title">Предпросмотр</span>
+                    <div class="pv-url" id="pvUrl">http://127.0.0.1:5500/index.html</div>
+                    <button class="icon-btn" id="btnRefresh" title="Обновить">⟳</button>
+                </div>
+                <iframe id="preview" sandbox="allow-scripts"></iframe>
+            </div>
+
+        </div>
+
+        <div class="resizer h" id="rzPanel"></div>
+
+        <div id="panel">
+            <div class="panel-head">
+                <div class="ptabs">
+                    <span class="pt" id="pt_problems">ПРОБЛЕМЫ<span class="badge" id="bd_problems" hidden></span></span>
+                    <span class="pt active" id="pt_check">ПРОВЕРКА</span>
+                    <span class="pt" id="pt_console">КОНСОЛЬ<span class="badge" id="bd_console" hidden></span></span>
+                </div>
+                <button class="icon-btn" id="btnClearConsole" title="Очистить консоль">🚫</button>
+                <button class="icon-btn" id="btnClosePanel" title="Закрыть панель">✕</button>
+            </div>
+            <div class="panel-body">
+                <div id="p_problems" hidden></div>
+                <div id="p_check"></div>
+                <div id="p_console" hidden></div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Строка состояния -->
+<div id="statusbar">
+    <span class="sb-item" id="sbQuests" title="Прогресс по квестам">🎯 0/0</span>
+    <span class="sb-item" id="sbExam" hidden title="Оставшееся время экзамена">⏱ 20:00</span>
+    <span class="sb-item" id="sbStats" title="Опыт, уровень и серия дней. Нажми, чтобы открыть профиль">⭐ 0 XP</span>
+    <span class="sb-item" id="sbProblems" title="Проблемы в коде">⊗ 0 &nbsp;⚠ 0</span>
+    <span class="sb-gap"></span>
+    <span class="sb-item sb-hide-mobile" id="sbPos">Стр 1, стлб 1</span>
+    <span class="sb-item sb-hide-mobile">Пробелов: 4</span>
+    <span class="sb-item sb-hide-mobile">UTF-8</span>
+    <span class="sb-item" id="sbLang">HTML</span>
+    <span class="sb-item" id="sbAuto">⚡ Автозапуск: вкл</span>
+</div>
+
+<div id="examOverlay" hidden><div class="ex-card" id="examCard"></div></div>
+<div id="dropdown" hidden></div>
+<div id="toasts"></div>
+
+<script>
+
+    // ------------------------------------------------------------
+    //  Состояние
+    // ------------------------------------------------------------
+
+    let editor;
+    const models = {};
+    let viewStates = {};
+    let activeFile = "html";
+
+    let currentTrack = null;
+    let currentIdx = 0;
+    let currentTask = null;
+
+    let jsCheckHandler = null;
+    let jsCheckTimer = null;
+    let autoTimer = null;
+    let saveTimer = null;
+    let panelTab = "check";
+    let consoleCount = 0;
+    let skipSave = false;
+    let currentDaily = false;
+    let examMode = false;
+    let examOpening = false;
+    let exam = null;
+
+    const preview = document.getElementById("preview");
+    const params = new URLSearchParams(window.location.search);
+
+    function $(id) { return document.getElementById(id); }
+
+    const FILES = [
+        { lang: "html", name: "index.html", label: "HTML", badge: "<>", cls: "fi-html" },
+        { lang: "css", name: "style.css", label: "CSS", badge: "#", cls: "fi-css" },
+        { lang: "javascript", name: "script.js", label: "JavaScript", badge: "JS", cls: "fi-js" }
+    ];
+
+    function fileInfo(lang) {
+        for (var i = 0; i < FILES.length; i++) {
+            if (FILES[i].lang === lang) return FILES[i];
+        }
+        return FILES[0];
+    }
+
+    function getCode(lang) {
+        return models[lang] ? models[lang].getValue() : "";
+    }
+
+
+    // ------------------------------------------------------------
+    //  Настройки и хранилище
+    // ------------------------------------------------------------
+
+    function loadJson(key) {
+        try {
+            return JSON.parse(localStorage.getItem(key) || "null") || {};
+        } catch (e) {
+            return {};
+        }
+    }
+
+    function saveJson(key, value) {
+        try {
+            localStorage.setItem(key, JSON.stringify(value));
+        } catch (e) { /* хранилище недоступно */ }
+    }
+
+    const settings = Object.assign(
+        { theme: "dark", fontSize: 15, autorun: true, wrap: true },
+        loadJson("ph_settings")
+    );
+
+    function saveSettings() { saveJson("ph_settings", settings); }
+
+    document.body.classList.toggle("light", settings.theme === "light");
+
+
+    // ------------------------------------------------------------
+    //  Вспомогательные функции для проверки CSS, квесты и задачи
+    // ------------------------------------------------------------
+
+    function cs(doc, selector) {
+        var el = doc.querySelector(selector);
+        return el ? doc.defaultView.getComputedStyle(el) : null;
+    }
+
+    function rgb(str) {
+        var m = (str || "").match(/[\d.]+/g);
+        return m ? m.map(Number) : [0, 0, 0, 1];
+    }
+
+    function hasColor(str) {
+        var c = rgb(str);
+        return !(c.length === 4 && c[3] === 0);
+    }
+
+    function txt(el) {
+        return el ? (el.textContent || "").trim() : "";
+    }
+
+    // ------------------------------------------------------------
+    //  КВЕСТЫ
+    //  HTML и CSS проверяются в скрытом iframe (функция получает doc),
+    //  JavaScript проверяется внутри самой страницы результата.
+    // ------------------------------------------------------------
+
+    const QUESTS = {
+
+        html: {
+            title: "HTML",
+            icon: "🌐",
+            tab: "html",
+            type: "static",
+            tasks: [
+                {
+                    title: "Заголовок и абзац",
+                    text: "Создай заголовок h1 с текстом «Я изучаю HTML» и абзац p с текстом «Это мой первый урок программирования».",
+                    html: "<!-- Пиши код здесь -->\n",
+                    hint: "Заголовок: <h1>Я изучаю HTML</h1>\nАбзац: <p>Это мой первый урок программирования.</p>",
+                    checks: [
+                        ["Есть заголовок h1", function (d) { return !!d.querySelector("h1"); }],
+                        ["Текст h1: «Я изучаю HTML»", function (d) { return txt(d.querySelector("h1")).toLowerCase() === "я изучаю html"; }],
+                        ["Есть абзац p", function (d) { return !!d.querySelector("p"); }],
+                        ["В абзаце написано про первый урок программирования", function (d) { return txt(d.querySelector("p")).toLowerCase().indexOf("первый урок программирования") > -1; }]
+                    ]
+                },
+                {
+                    title: "Список",
+                    text: "Создай заголовок h2 с текстом «Мои хобби» и под ним маркированный список ul минимум из трёх пунктов li.",
+                    html: "<!-- Пиши код здесь -->\n",
+                    hint: "Список состоит из тега ul, а каждый пункт — тег li:\n<ul>\n    <li>Футбол</li>\n    <li>Игры</li>\n    <li>Музыка</li>\n</ul>\nМожно быстро набрать: ul>li*3 и нажать Tab.",
+                    checks: [
+                        ["Есть заголовок h2 с текстом «Мои хобби»", function (d) { return txt(d.querySelector("h2")).toLowerCase() === "мои хобби"; }],
+                        ["Есть список ul", function (d) { return !!d.querySelector("ul"); }],
+                        ["В списке минимум 3 пункта li", function (d) { return d.querySelectorAll("ul li").length >= 3; }],
+                        ["Все пункты списка заполнены текстом", function (d) {
+                            var li = d.querySelectorAll("ul li");
+                            if (li.length === 0) return false;
+                            for (var i = 0; i < li.length; i++) { if (txt(li[i]) === "") return false; }
+                            return true;
+                        }]
+                    ]
+                },
+                {
+                    title: "Ссылка и картинка",
+                    text: "Добавь ссылку a с адресом, который начинается с https://, и текстом «Мой любимый сайт». Ещё добавь картинку img с атрибутами src и alt.",
+                    html: "<!-- Пиши код здесь -->\n",
+                    hint: "Ссылка: <a href=\"https://google.com\">Мой любимый сайт</a>\nКартинка: <img src=\"https://picsum.photos/300/150\" alt=\"Случайная картинка\">\nАтрибут alt — это описание картинки.",
+                    checks: [
+                        ["Есть ссылка a с адресом https://", function (d) { return !!d.querySelector('a[href^="https://"]'); }],
+                        ["Текст ссылки: «Мой любимый сайт»", function (d) { return txt(d.querySelector("a")).toLowerCase() === "мой любимый сайт"; }],
+                        ["Есть картинка img с атрибутом src", function (d) { var i = d.querySelector("img"); return !!i && (i.getAttribute("src") || "") !== ""; }],
+                        ["У картинки заполнен атрибут alt", function (d) { var i = d.querySelector("img"); return !!i && (i.getAttribute("alt") || "").trim() !== ""; }]
+                    ]
+                },
+                {
+                    title: "Форма входа",
+                    text: "Создай форму form, внутри которой есть поле ввода input с подсказкой placeholder и кнопка button с текстом.",
+                    html: "<!-- Пиши код здесь -->\n",
+                    hint: "<form>\n    <input type=\"text\" placeholder=\"Введи имя\">\n    <button>Войти</button>\n</form>",
+                    checks: [
+                        ["Есть форма form", function (d) { return !!d.querySelector("form"); }],
+                        ["В форме есть поле input с placeholder", function (d) { var i = d.querySelector("form input"); return !!i && (i.getAttribute("placeholder") || "").trim() !== ""; }],
+                        ["В форме есть кнопка button", function (d) { return !!d.querySelector("form button"); }],
+                        ["На кнопке написан текст", function (d) { return txt(d.querySelector("form button")) !== ""; }]
+                    ]
+                },
+                {
+                    title: "Структура сайта",
+                    text: "Собери страницу из смысловых тегов: header с заголовком h1, nav минимум с двумя ссылками, main с абзацем p и footer с текстом.",
+                    html: "<!-- Пиши код здесь -->\n",
+                    hint: "<header>\n    <h1>Мой сайт</h1>\n</header>\n<nav>\n    <a href=\"#\">Главная</a>\n    <a href=\"#\">Контакты</a>\n<a href="ai.html" class="nav-link">Programer AI</a></nav>\n<main>\n    <p>Добро пожаловать!</p>\n</main>\n<footer>Все права защищены</footer>",
+                    checks: [
+                        ["В header есть заголовок h1 с текстом", function (d) { return txt(d.querySelector("header h1")) !== ""; }],
+                        ["В nav есть минимум 2 ссылки", function (d) { return d.querySelectorAll("nav a").length >= 2; }],
+                        ["В main есть абзац p с текстом", function (d) { return txt(d.querySelector("main p")) !== ""; }],
+                        ["В footer есть текст", function (d) { return txt(d.querySelector("footer")) !== ""; }]
+                    ]
+                }
+            ]
+        },
+
+        css: {
+            title: "CSS",
+            icon: "🎨",
+            tab: "css",
+            type: "static",
+            tasks: [
+                {
+                    title: "Цвета и размер",
+                    text: "Сделай заголовок h1 синим. Для абзаца p задай серый цвет и размер шрифта 20px.",
+                    html: "<h1>Я изучаю CSS</h1>\n<p>Стили делают сайт красивым.</p>",
+                    css: "h1 {\n    \n}\n\np {\n    \n}",
+                    hint: "h1 {\n    color: blue;\n}\n\np {\n    color: gray;\n    font-size: 20px;\n}",
+                    checks: [
+                        ["Заголовок h1 синий", function (d) { var s = cs(d, "h1"); if (!s) return false; var c = rgb(s.color); return c[2] > 100 && c[2] > c[0] + 50 && c[2] > c[1] + 30; }],
+                        ["Абзац p серого цвета", function (d) { var s = cs(d, "p"); if (!s) return false; var c = rgb(s.color); var mx = Math.max(c[0], c[1], c[2]), mn = Math.min(c[0], c[1], c[2]); return mx - mn <= 40 && c[0] >= 60 && c[0] <= 200; }],
+                        ["Размер шрифта абзаца 20px", function (d) { var s = cs(d, "p"); return !!s && s.fontSize === "20px"; }]
+                    ]
+                },
+                {
+                    title: "Фон и выравнивание",
+                    text: "Задай странице (body) любой цвет фона, кроме белого. Заголовок h1 и абзац p выровняй по центру.",
+                    html: "<h1>Мой сайт</h1>\n<p>Добро пожаловать!</p>",
+                    css: "body {\n    \n}\n\nh1 {\n    \n}\n\np {\n    \n}",
+                    hint: "body {\n    background-color: #dbeafe;\n}\n\nh1 {\n    text-align: center;\n}\n\np {\n    text-align: center;\n}",
+                    checks: [
+                        ["У body задан цвет фона (не белый)", function (d) { var s = cs(d, "body"); if (!s) return false; var c = rgb(s.backgroundColor); return hasColor(s.backgroundColor) && !(c[0] === 255 && c[1] === 255 && c[2] === 255); }],
+                        ["Заголовок h1 выровнен по центру", function (d) { var s = cs(d, "h1"); return !!s && s.textAlign === "center"; }],
+                        ["Абзац p выровнен по центру", function (d) { var s = cs(d, "p"); return !!s && s.textAlign === "center"; }]
+                    ]
+                },
+                {
+                    title: "Карточка",
+                    text: "Оформи блок с классом box как карточку: внутренний отступ padding от 20px, рамка border, скруглённые углы border-radius от 10px и цвет фона.",
+                    html: "<div class=\"box\">\n    <h2>Карточка</h2>\n    <p>Это мой первый блок.</p>\n</div>",
+                    css: ".box {\n    \n}",
+                    hint: ".box {\n    padding: 20px;\n    border: 2px solid #2563eb;\n    border-radius: 12px;\n    background-color: #eff6ff;\n}\n\nКласс в CSS записывается с точки: .box",
+                    checks: [
+                        ["Внутренний отступ padding не меньше 20px", function (d) { var s = cs(d, ".box"); return !!s && parseFloat(s.paddingTop) >= 20; }],
+                        ["Есть рамка border", function (d) { var s = cs(d, ".box"); return !!s && parseFloat(s.borderTopWidth) >= 1 && s.borderTopStyle !== "none"; }],
+                        ["Скругление углов не меньше 10px", function (d) { var s = cs(d, ".box"); return !!s && parseFloat(s.borderTopLeftRadius) >= 10; }],
+                        ["Задан цвет фона", function (d) { var s = cs(d, ".box"); return !!s && hasColor(s.backgroundColor); }]
+                    ]
+                },
+                {
+                    title: "Классы",
+                    text: "Оформи абзац с классом important: красный цвет и жирный шрифт. А абзац с классом note сделай курсивным.",
+                    html: "<p class=\"important\">Это важный текст</p>\n<p class=\"note\">Это просто заметка</p>",
+                    css: ".important {\n    \n}\n\n.note {\n    \n}",
+                    hint: ".important {\n    color: red;\n    font-weight: bold;\n}\n\n.note {\n    font-style: italic;\n}",
+                    checks: [
+                        [".important — красный цвет", function (d) { var s = cs(d, ".important"); if (!s) return false; var c = rgb(s.color); return c[0] > 180 && c[1] < 100 && c[2] < 100; }],
+                        [".important — жирный шрифт", function (d) { var s = cs(d, ".important"); return !!s && parseInt(s.fontWeight, 10) >= 600; }],
+                        [".note — курсив", function (d) { var s = cs(d, ".note"); return !!s && s.fontStyle === "italic"; }]
+                    ]
+                },
+                {
+                    title: "Красивая кнопка",
+                    text: "Оформи кнопку с классом btn: свой цвет фона, белый текст, padding от 10px, border-radius от 6px и курсор pointer.",
+                    html: "<button class=\"btn\">Нажми меня</button>",
+                    css: ".btn {\n    \n}",
+                    hint: ".btn {\n    background-color: #2563eb;\n    color: white;\n    padding: 12px 24px;\n    border-radius: 8px;\n    border: none;\n    cursor: pointer;\n}",
+                    checks: [
+                        ["Задан свой цвет фона кнопки", function (d) {
+                            var s = cs(d, ".btn"); if (!s) return false;
+                            var plain = d.createElement("button"); d.body.appendChild(plain);
+                            var def = d.defaultView.getComputedStyle(plain).backgroundColor;
+                            return hasColor(s.backgroundColor) && s.backgroundColor !== def;
+                        }],
+                        ["Текст кнопки светлый (белый)", function (d) { var s = cs(d, ".btn"); if (!s) return false; var c = rgb(s.color); return c[0] > 200 && c[1] > 200 && c[2] > 200; }],
+                        ["Отступ padding не меньше 10px", function (d) { var s = cs(d, ".btn"); return !!s && parseFloat(s.paddingTop) >= 10; }],
+                        ["Скругление border-radius не меньше 6px", function (d) { var s = cs(d, ".btn"); return !!s && parseFloat(s.borderTopLeftRadius) >= 6; }],
+                        ["Курсор pointer", function (d) { var s = cs(d, ".btn"); return !!s && s.cursor === "pointer"; }]
+                    ]
+                }
+            ]
+        },
+
+        js: {
+            title: "JavaScript",
+            icon: "⚡",
+            tab: "javascript",
+            type: "script",
+            tasks: [
+                {
+                    title: "Кнопка меняет текст",
+                    text: "При клике на кнопку измени текст заголовка на «Я изучаю JavaScript!».",
+                    html: "<h1 id=\"title\">Привет!</h1>\n<button id=\"btn\">Нажми на меня</button>",
+                    js: "const title = document.getElementById(\"title\");\nconst button = document.getElementById(\"btn\");\n\n// Допиши код: при клике на кнопку меняй текст заголовка\n",
+                    hint: "button.addEventListener(\"click\", function () {\n    title.textContent = \"Я изучаю JavaScript!\";\n});",
+                    checks: [
+                        ["Перед кликом заголовок не изменён", function () { return document.getElementById("title").textContent.trim() === "Привет!"; }],
+                        ["После клика заголовок: «Я изучаю JavaScript!»", function () {
+                            document.getElementById("btn").click();
+                            return document.getElementById("title").textContent.trim() === "Я изучаю JavaScript!";
+                        }]
+                    ]
+                },
+                {
+                    title: "Переменные",
+                    text: "Создай переменную userName со своим именем (строка) и переменную age с возрастом (число). Выведи в элемент #out текст «Меня зовут ..., мне ... лет».",
+                    html: "<p id=\"out\"></p>",
+                    js: "// 1. Создай переменную userName со своим именем\n// 2. Создай переменную age со своим возрастом\n// 3. Выведи в элемент #out текст: Меня зовут ..., мне ... лет\n\nconst out = document.getElementById(\"out\");\n",
+                    hint: "const userName = \"Али\";\nconst age = 12;\n\nout.textContent = \"Меня зовут \" + userName + \", мне \" + age + \" лет\";",
+                    checks: [
+                        ["Переменная userName — строка с текстом", function () { return typeof userName === "string" && userName.length > 0; }],
+                        ["Переменная age — число", function () { return typeof age === "number" && !isNaN(age); }],
+                        ["В элементе #out есть имя и возраст", function () {
+                            var o = document.getElementById("out").textContent;
+                            return o.indexOf(userName) > -1 && o.indexOf(String(age)) > -1;
+                        }]
+                    ]
+                },
+                {
+                    title: "Функции",
+                    text: "Напиши функцию square(n), которая возвращает квадрат числа, и функцию greet(name), которая возвращает строку вида «Привет, Али!».",
+                    html: "<p>Функции проверит кнопка «Проверить»</p>",
+                    js: "function square(n) {\n    // верни квадрат числа n\n}\n\nfunction greet(name) {\n    // верни строку \"Привет, \" + имя + \"!\"\n}\n",
+                    hint: "Чтобы функция вернула значение, используй слово return:\n\nfunction square(n) {\n    return n * n;\n}\n\nfunction greet(name) {\n    return \"Привет, \" + name + \"!\";\n}",
+                    checks: [
+                        ["square(5) возвращает 25", function () { return typeof square === "function" && square(5) === 25; }],
+                        ["square(3) возвращает 9", function () { return typeof square === "function" && square(3) === 9; }],
+                        ["greet(\"Али\") возвращает «Привет, Али!»", function () { return typeof greet === "function" && greet("Али") === "Привет, Али!"; }],
+                        ["greet(\"Мария\") возвращает «Привет, Мария!»", function () { return typeof greet === "function" && greet("Мария") === "Привет, Мария!"; }]
+                    ]
+                },
+                {
+                    title: "Условия",
+                    text: "Напиши функцию checkAge(age): если age 18 или больше — она возвращает «Взрослый», иначе — «Школьник».",
+                    html: "<p>Функцию проверит кнопка «Проверить»</p>",
+                    js: "function checkAge(age) {\n    // используй if и else\n}\n",
+                    hint: "function checkAge(age) {\n    if (age >= 18) {\n        return \"Взрослый\";\n    } else {\n        return \"Школьник\";\n    }\n}",
+                    checks: [
+                        ["checkAge(20) возвращает «Взрослый»", function () { return typeof checkAge === "function" && checkAge(20) === "Взрослый"; }],
+                        ["checkAge(18) возвращает «Взрослый»", function () { return typeof checkAge === "function" && checkAge(18) === "Взрослый"; }],
+                        ["checkAge(12) возвращает «Школьник»", function () { return typeof checkAge === "function" && checkAge(12) === "Школьник"; }]
+                    ]
+                },
+                {
+                    title: "Счётчик кликов",
+                    text: "Сделай счётчик: при каждом клике на кнопку «+1» число в заголовке увеличивается на единицу.",
+                    html: "<h1 id=\"count\">0</h1>\n<button id=\"plus\">+1</button>",
+                    js: "const countEl = document.getElementById(\"count\");\nconst plusBtn = document.getElementById(\"plus\");\n\nlet number = 0;\n\n// Допиши код: при клике увеличивай number и показывай его в заголовке\n",
+                    hint: "plusBtn.addEventListener(\"click\", function () {\n    number = number + 1;\n    countEl.textContent = number;\n});",
+                    checks: [
+                        ["После первого клика число равно 1", function () { document.getElementById("plus").click(); return document.getElementById("count").textContent.trim() === "1"; }],
+                        ["После второго клика число равно 2", function () { document.getElementById("plus").click(); return document.getElementById("count").textContent.trim() === "2"; }],
+                        ["После третьего клика число равно 3", function () { document.getElementById("plus").click(); return document.getElementById("count").textContent.trim() === "3"; }]
+                    ]
+                }
+            ]
+        }
+
+    };
+
+
+    // ===== ALGO START =====
+    // ------------------------------------------------------------
+    //  Квест «Задачи» — в стиле олимпиадных задач (вход → выход).
+    //  Ученик пишет функцию solve(...), проверка прогоняет её по тестам.
+    // ------------------------------------------------------------
+
+    function fmtOut(out) {
+        return /^-?\d+$/.test(out) ? out : "«" + out + "»";
+    }
+
+    function fmtArgs(args) {
+        return args.map(function (a) { return JSON.stringify(a); }).join(", ");
+    }
+
+    function makeAlgoCheck(desc, t, fn, showGot) {
+        var run = fn + ".apply(null," + JSON.stringify(t[0]) + ")";
+        var test = new Function("var r=" + run + ";return String(r).trim()===" + JSON.stringify(t[1]) + ";");
+        var got = new Function("return String(" + run + ");");
+        return showGot ? [desc, test, got] : [desc, test];
+    }
+
+    function algoTask(p) {
+
+        var fn = p.fn || "solve";
+        var signature = fn + "(" + p.params.join(", ") + ")";
+
+        var lines = [
+            p.text,
+            "",
+            "Функция: " + signature,
+            "Входные данные: " + p.input,
+            "Выходные данные: " + p.output,
+            "Ограничения: " + p.limits,
+            ""
+        ];
+
+        var checks = [];
+
+        p.examples.forEach(function (ex, i) {
+            var line = "Пример " + (i + 1) + ": " + fn + "(" + fmtArgs(ex[0]) + ") → " + fmtOut(ex[1]);
+            lines.push(line);
+            checks.push(makeAlgoCheck(line, ex, fn, true));
+        });
+
+        p.hidden.forEach(function (t, i) {
+            checks.push(makeAlgoCheck("Скрытый тест " + (i + 1), t, fn, false));
+        });
+
+        return {
+            title: p.title,
+            text: lines.join("\n"),
+            html: "<p>Напиши функцию " + fn + " на вкладке JavaScript и нажми «Проверить».</p>",
+            js: "function " + signature + " {\n    // Напиши решение и верни результат через return\n}\n",
+            hint: p.hint,
+            checks: checks
+        };
+    }
+
+    const PROBLEMS = [
+        {
+            title: "Удвой положительное",
+            params: ["n"],
+            text: "Дано целое число n. Если оно положительное, удвой его. Иначе оставь число без изменений. Верни получившееся число.",
+            input: "одно целое число n.",
+            output: "одно целое число — результат.",
+            limits: "-1 000 000 000 ≤ n ≤ 1 000 000 000.",
+            examples: [[[5], "10"], [[-3], "-3"]],
+            hidden: [[[0], "0"], [[1], "2"], [[1000000000], "2000000000"], [[-1000000000], "-1000000000"]],
+            hint: "Используй условие:\nif (n > 0) {\n    return n * 2;\n}\nreturn n;\n\nОбрати внимание: ноль не положительное число."
+        },
+        {
+            title: "Максимум из двух",
+            params: ["a", "b"],
+            text: "Даны два целых числа a и b. Найди большее из них.",
+            input: "два целых числа a и b.",
+            output: "одно число — большее из двух.",
+            limits: "-1000 ≤ a, b ≤ 1000.",
+            examples: [[[3, 7], "7"], [[10, 2], "10"]],
+            hidden: [[[5, 5], "5"], [[-1, -9], "-1"], [[0, -4], "0"], [[-7, 3], "3"]],
+            hint: "Сравни числа через if:\nif (a > b) {\n    return a;\n} else {\n    return b;\n}\n\nПодумай: что вернуть, если числа равны?"
+        },
+        {
+            title: "Чётное или нечётное",
+            params: ["n"],
+            text: "Дано целое число n. Определи, чётное оно или нечётное. Верни строку «Чётное» или «Нечётное».",
+            input: "одно целое число n.",
+            output: "строка «Чётное» или «Нечётное».",
+            limits: "-1 000 000 000 ≤ n ≤ 1 000 000 000.",
+            examples: [[[4], "Чётное"], [[7], "Нечётное"]],
+            hidden: [[[0], "Чётное"], [[-3], "Нечётное"], [[-8], "Чётное"], [[1000000001], "Нечётное"]],
+            hint: "Остаток от деления на 2 даёт оператор %.\nЧётное число делится на 2 без остатка: n % 2 === 0.\n\nОсторожно: для отрицательных чисел остаток может быть -1, поэтому лучше проверять на равенство нулю."
+        },
+        {
+            title: "Знак числа",
+            params: ["n"],
+            text: "Дано целое число n. Верни «Положительное», если n больше нуля, «Отрицательное», если меньше нуля, и «Ноль», если n равно нулю.",
+            input: "одно целое число n.",
+            output: "одна из строк: «Положительное», «Отрицательное», «Ноль».",
+            limits: "-1 000 000 000 ≤ n ≤ 1 000 000 000.",
+            examples: [[[12], "Положительное"], [[-5], "Отрицательное"], [[0], "Ноль"]],
+            hidden: [[[1], "Положительное"], [[-1], "Отрицательное"], [[1000000000], "Положительное"], [[-1000000000], "Отрицательное"]],
+            hint: "Нужны три случая, поэтому используй if, else if и else:\nif (n > 0) { ... }\nelse if (n < 0) { ... }\nelse { ... }"
+        },
+        {
+            title: "Оценка по баллам",
+            params: ["score"],
+            text: "За контрольную можно набрать от 0 до 100 баллов. От 90 баллов — оценка «5», от 75 — «4», от 50 — «3», меньше 50 — «2». Верни оценку.",
+            input: "одно целое число score — количество баллов.",
+            output: "одна цифра — оценка (2, 3, 4 или 5).",
+            limits: "0 ≤ score ≤ 100.",
+            examples: [[[95], "5"], [[60], "3"], [[30], "2"]],
+            hidden: [[[90], "5"], [[89], "4"], [[75], "4"], [[74], "3"], [[50], "3"], [[49], "2"], [[0], "2"], [[100], "5"]],
+            hint: "Проверяй условия от большего порога к меньшему:\nif (score >= 90) return 5;\nif (score >= 75) return 4;\n...\n\nВнимание на границы: ровно 90, 75 и 50 баллов."
+        },
+        {
+            title: "Високосный год",
+            params: ["year"],
+            text: "Год високосный, если он делится на 4 и не делится на 100, либо делится на 400. Определи, високосный ли год. Верни «Да» или «Нет».",
+            input: "одно целое число year — год.",
+            output: "строка «Да» или «Нет».",
+            limits: "1 ≤ year ≤ 9999.",
+            examples: [[[2024], "Да"], [[2023], "Нет"], [[1900], "Нет"]],
+            hidden: [[[2000], "Да"], [[2100], "Нет"], [[1600], "Да"], [[1996], "Да"], [[2019], "Нет"]],
+            hint: "Условие можно записать через && (и) и || (или):\n(year % 4 === 0 && year % 100 !== 0) || year % 400 === 0"
+        },
+        {
+            title: "Существует ли треугольник",
+            params: ["a", "b", "c"],
+            text: "Даны длины трёх отрезков a, b и c. Треугольник с такими сторонами существует, если каждая сторона меньше суммы двух других. Верни «Да» или «Нет».",
+            input: "три целых положительных числа a, b, c.",
+            output: "строка «Да» или «Нет».",
+            limits: "1 ≤ a, b, c ≤ 1000.",
+            examples: [[[3, 4, 5], "Да"], [[1, 2, 3], "Нет"]],
+            hidden: [[[2, 2, 3], "Да"], [[10, 1, 1], "Нет"], [[5, 5, 5], "Да"], [[1, 10, 12], "Нет"], [[7, 10, 5], "Да"]],
+            hint: "Нужно проверить сразу три неравенства:\na + b > c\na + c > b\nb + c > a\nСоедини их через && .\n\nОбрати внимание: при равенстве (1, 2, 3) треугольника нет."
+        },
+        {
+            title: "Дней в месяце",
+            params: ["month"],
+            text: "Дан номер месяца от 1 до 12. Верни количество дней в этом месяце в обычном (не високосном) году, то есть в феврале 28 дней.",
+            input: "одно целое число month — номер месяца.",
+            output: "одно число — количество дней.",
+            limits: "1 ≤ month ≤ 12.",
+            examples: [[[2], "28"], [[7], "31"], [[4], "30"]],
+            hidden: [[[1], "31"], [[12], "31"], [[6], "30"], [[11], "30"], [[8], "31"]],
+            hint: "Месяцы по 30 дней: 4, 6, 9 и 11. Февраль — 28 дней. Все остальные — по 31.\n\nМожно использовать if или switch."
+        }
+    ];
+
+    QUESTS.algo = {
+        title: "Задачи",
+        icon: "🧮",
+        tab: "javascript",
+        type: "script",
+        tasks: PROBLEMS.map(algoTask)
+    };
+
+    // ------------------------------------------------------------
+    //  Квест «Функции»: ученик пишет функцию с заданным именем,
+    //  а проверка вызывает её с разными аргументами.
+    // ------------------------------------------------------------
+
+    const FUNC_PROBLEMS = [
+        {
+            title: "Квадрат числа",
+            fn: "square",
+            params: ["n"],
+            text: "Функция принимает число и возвращает его квадрат, то есть число, умноженное само на себя.",
+            input: "одно целое число n.",
+            output: "одно целое число — квадрат n.",
+            limits: "-10 000 ≤ n ≤ 10 000.",
+            examples: [[[5], "25"], [[-3], "9"]],
+            hidden: [[[0], "0"], [[1], "1"], [[12], "144"], [[-10], "100"]],
+            hint: "Функция описывается словом function, а результат отдаётся словом return:\n\nfunction square(n) {\n    return n * n;\n}\n\nВажно: console.log только печатает значение, а return его возвращает. Проверка читает именно return."
+        },
+        {
+            title: "Сумма трёх чисел",
+            fn: "sum3",
+            params: ["a", "b", "c"],
+            text: "Функция принимает три числа и возвращает их сумму.",
+            input: "три целых числа a, b, c.",
+            output: "одно число — сумма a + b + c.",
+            limits: "-1000 ≤ a, b, c ≤ 1000.",
+            examples: [[[1, 2, 3], "6"], [[10, -5, 2], "7"]],
+            hidden: [[[0, 0, 0], "0"], [[-1, -2, -3], "-6"], [[1000, 1000, 1000], "3000"], [[7, -7, 5], "5"]],
+            hint: "У функции может быть несколько параметров через запятую:\n\nfunction sum3(a, b, c) {\n    return a + b + c;\n}"
+        },
+        {
+            title: "Максимум из трёх",
+            fn: "max3",
+            params: ["a", "b", "c"],
+            text: "Функция принимает три числа и возвращает наибольшее из них.",
+            input: "три целых числа a, b, c.",
+            output: "одно число — наибольшее из трёх.",
+            limits: "-1000 ≤ a, b, c ≤ 1000.",
+            examples: [[[1, 5, 3], "5"], [[-1, -7, -3], "-1"]],
+            hidden: [[[4, 4, 4], "4"], [[9, 2, 9], "9"], [[0, -1, -2], "0"], [[3, 10, 7], "10"]],
+            hint: "Можно сравнивать числа через if, а можно воспользоваться готовой функцией:\n\nfunction max3(a, b, c) {\n    return Math.max(a, b, c);\n}"
+        },
+        {
+            title: "Приветствие",
+            fn: "greet",
+            params: ["name"],
+            text: "Функция принимает имя (строку) и возвращает приветствие в виде «Привет, ИМЯ!».",
+            input: "одна строка name — имя.",
+            output: "строка вида «Привет, ИМЯ!».",
+            limits: "длина имени от 1 до 30 символов.",
+            examples: [[["Али"], "Привет, Али!"], [["Мария"], "Привет, Мария!"]],
+            hidden: [[["Я"], "Привет, Я!"], [["Саид"], "Привет, Саид!"], [["Анна-Мария"], "Привет, Анна-Мария!"]],
+            hint: "Строки склеиваются плюсом:\n\nfunction greet(name) {\n    return \"Привет, \" + name + \"!\";\n}\n\nСледи за пробелом после запятой и восклицательным знаком."
+        },
+        {
+            title: "Факториал",
+            fn: "factorial",
+            params: ["n"],
+            text: "Факториал числа n — это произведение всех целых чисел от 1 до n. Например, 4! = 1 · 2 · 3 · 4 = 24. Факториал нуля равен 1.",
+            input: "одно целое число n.",
+            output: "одно число — факториал n.",
+            limits: "0 ≤ n ≤ 10.",
+            examples: [[[5], "120"], [[0], "1"]],
+            hidden: [[[1], "1"], [[3], "6"], [[7], "5040"], [[10], "3628800"]],
+            hint: "Заведи переменную-результат и умножай её в цикле:\n\nfunction factorial(n) {\n    let result = 1;\n    for (let i = 2; i <= n; i++) {\n        result = result * i;\n    }\n    return result;\n}"
+        },
+        {
+            title: "Переверни строку",
+            fn: "reverseString",
+            params: ["text"],
+            text: "Функция принимает строку и возвращает её задом наперёд.",
+            input: "одна строка text.",
+            output: "строка text, записанная в обратном порядке.",
+            limits: "длина строки от 0 до 100 символов.",
+            examples: [[["привет"], "тевирп"], [["12345"], "54321"]],
+            hidden: [[["a"], "a"], [[""], ""], [["Да Нет"], "теН аД"], [["level"], "level"]],
+            hint: "У строки нет готового reverse, зато он есть у массива:\n\nfunction reverseString(text) {\n    return text.split(\"\").reverse().join(\"\");\n}\n\nsplit разбивает строку на буквы, reverse переворачивает, join собирает обратно."
+        },
+        {
+            title: "Простое число",
+            fn: "isPrime",
+            params: ["n"],
+            text: "Число называется простым, если оно больше 1 и делится только на 1 и на само себя. Функция возвращает «Да», если n простое, и «Нет», если нет.",
+            input: "одно целое число n.",
+            output: "строка «Да» или «Нет».",
+            limits: "1 ≤ n ≤ 10 000.",
+            examples: [[[7], "Да"], [[10], "Нет"]],
+            hidden: [[[1], "Нет"], [[2], "Да"], [[17], "Да"], [[91], "Нет"], [[97], "Да"], [[100], "Нет"], [[9973], "Да"]],
+            hint: "Единица не простое число. Для остальных проверь делители от 2 до n - 1:\n\nfunction isPrime(n) {\n    if (n < 2) return \"Нет\";\n    for (let i = 2; i < n; i++) {\n        if (n % i === 0) return \"Нет\";\n    }\n    return \"Да\";\n}"
+        },
+        {
+            title: "Число Фибоначчи",
+            fn: "fib",
+            params: ["n"],
+            text: "Числа Фибоначчи: 0, 1, 1, 2, 3, 5, 8, 13, ... Каждое следующее равно сумме двух предыдущих. Нумерация с нуля: fib(0) = 0, fib(1) = 1. Функция возвращает n-е число.",
+            input: "одно целое число n.",
+            output: "одно число — n-е число Фибоначчи.",
+            limits: "0 ≤ n ≤ 30.",
+            examples: [[[6], "8"], [[10], "55"]],
+            hidden: [[[0], "0"], [[1], "1"], [[2], "1"], [[15], "610"], [[20], "6765"]],
+            hint: "Храни два последних числа и сдвигай их в цикле:\n\nfunction fib(n) {\n    let a = 0;\n    let b = 1;\n    for (let i = 0; i < n; i++) {\n        let next = a + b;\n        a = b;\n        b = next;\n    }\n    return a;\n}"
+        }
+    ];
+
+    QUESTS.func = {
+        title: "Функции",
+        icon: "🔧",
+        tab: "javascript",
+        type: "script",
+        tasks: FUNC_PROBLEMS.map(algoTask)
+    };
+
+
+    // ------------------------------------------------------------
+    //  Квест «Проекты»: мини-сайты, которые собираются по шагам.
+    //  Заготовка каждого следующего шага — это готовое решение предыдущего.
+    // ------------------------------------------------------------
+
+    function L() { return Array.prototype.join.call(arguments, "\n"); }
+
+    // ----- Проект 1: сайт-визитка -----
+
+    const P1_HTML = L(
+        "<header>",
+        "    <h1>Али Валиев</h1>",
+        "</header>",
+        "<main>",
+        '    <p class="about">Я изучаю веб-разработку и делаю свои первые сайты.</p>',
+        '    <ul class="skills">',
+        "        <li>HTML</li>",
+        "        <li>CSS</li>",
+        "        <li>JavaScript</li>",
+        "    </ul>",
+        "</main>",
+        "<footer>© 2026 Али Валиев</footer>"
+    );
+
+    const P2_CSS = L(
+        "body {",
+        "    font-family: Arial, sans-serif;",
+        "    background-color: #f1f5f9;",
+        "    margin: 0;",
+        "}",
+        "",
+        "header {",
+        "    background-color: #2563eb;",
+        "    color: white;",
+        "    text-align: center;",
+        "    padding: 30px;",
+        "}",
+        "",
+        "main {",
+        "    padding: 20px;",
+        "}",
+        "",
+        ".skills {",
+        "    display: flex;",
+        "    gap: 10px;",
+        "    list-style: none;",
+        "    padding: 0;",
+        "}",
+        "",
+        ".skills li {",
+        "    background-color: white;",
+        "    padding: 10px 16px;",
+        "    border-radius: 8px;",
+        "}",
+        "",
+        "footer {",
+        "    text-align: center;",
+        "    padding: 20px;",
+        "    color: #64748b;",
+        "}"
+    );
+
+    const P3_HTML = P1_HTML.replace("    </ul>\n</main>", L(
+        "    </ul>",
+        '    <section class="card">',
+        "        <h2>Мои контакты</h2>",
+        "        <p>Telegram: @ali_dev</p>",
+        '        <button class="contact-btn">Написать мне</button>',
+        "    </section>",
+        "</main>"
+    ));
+
+    const P3_CSS = P2_CSS + "\n\n" + L(
+        ".card {",
+        "    background-color: white;",
+        "    padding: 20px;",
+        "    border-radius: 12px;",
+        "    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);",
+        "}",
+        "",
+        ".contact-btn {",
+        "    background-color: #2563eb;",
+        "    color: white;",
+        "    border: none;",
+        "    padding: 10px 20px;",
+        "    border-radius: 8px;",
+        "    cursor: pointer;",
+        "}"
+    );
+
+    const P4_HTML = P1_HTML.replace("    </ul>\n</main>", L(
+        "    </ul>",
+        '    <section class="card">',
+        "        <h2>Мои контакты</h2>",
+        '        <p id="contact" hidden>Telegram: @ali_dev</p>',
+        '        <button id="contactBtn" class="contact-btn">Написать мне</button>',
+        "    </section>",
+        "</main>"
+    ));
+
+    // ----- Проект 2: список дел -----
+
+    const P5_HTML = L(
+        '<div class="container">',
+        "    <h1>Мои дела</h1>",
+        '    <div class="add-row">',
+        '        <input id="taskInput" type="text" placeholder="Что нужно сделать?">',
+        '        <button id="addBtn">Добавить</button>',
+        "    </div>",
+        '    <ul id="list">',
+        "        <li>Сделать зарядку</li>",
+        "        <li>Выучить урок по CSS</li>",
+        "    </ul>",
+        "</div>"
+    );
+
+    const P6_CSS = L(
+        ".container {",
+        "    max-width: 500px;",
+        "    margin: 30px auto;",
+        "    font-family: Arial, sans-serif;",
+        "}",
+        "",
+        "#taskInput {",
+        "    padding: 10px;",
+        "    border: 1px solid #cbd5e1;",
+        "    border-radius: 8px;",
+        "}",
+        "",
+        "#addBtn {",
+        "    background-color: #2563eb;",
+        "    color: white;",
+        "    border: none;",
+        "    padding: 10px 16px;",
+        "    border-radius: 8px;",
+        "    cursor: pointer;",
+        "}",
+        "",
+        "#list li {",
+        "    list-style: none;",
+        "    padding: 10px;",
+        "    border-bottom: 1px solid #e2e8f0;",
+        "}"
+    );
+
+    const P7_JS = L(
+        'const input = document.getElementById("taskInput");',
+        'const addBtn = document.getElementById("addBtn");',
+        'const list = document.getElementById("list");',
+        "",
+        'addBtn.addEventListener("click", function () {',
+        "    const text = input.value.trim();",
+        '    if (text === "") return;',
+        "",
+        '    const li = document.createElement("li");',
+        "    li.textContent = text;",
+        "    list.appendChild(li);",
+        '    input.value = "";',
+        "});"
+    );
+
+    const P8_HTML = L(
+        '<div class="container">',
+        "    <h1>Мои дела</h1>",
+        '    <div class="add-row">',
+        '        <input id="taskInput" type="text" placeholder="Что нужно сделать?">',
+        '        <button id="addBtn">Добавить</button>',
+        "    </div>",
+        '    <p id="count">Всего дел: 0</p>',
+        '    <ul id="list"></ul>',
+        "</div>"
+    );
+
+    QUESTS.proj = {
+        title: "Проекты",
+        icon: "🏗",
+        tab: "html",
+        type: "static",
+        tasks: [
+            {
+                title: "Визитка: структура",
+                text: "Проект 1 из 2 — сайт-визитка. Шаг 1: собери структуру страницы. Нужен header с заголовком h1 (твоё имя), main с абзацем p и списком ul минимум из трёх навыков li, а ещё footer с текстом.",
+                html: "<!-- Собери страницу: header, main, footer -->\n",
+                hint: "<header>\n    <h1>Али Валиев</h1>\n</header>\n<main>\n    <p>Я изучаю веб-разработку.</p>\n    <ul>\n        <li>HTML</li>\n        <li>CSS</li>\n        <li>JavaScript</li>\n    </ul>\n</main>\n<footer>© 2026 Али Валиев</footer>",
+                checks: [
+                    ["В header есть заголовок h1 с текстом", function (d) { return txt(d.querySelector("header h1")) !== ""; }],
+                    ["В main есть абзац p с текстом", function (d) { return txt(d.querySelector("main p")) !== ""; }],
+                    ["В main есть список ul минимум из 3 пунктов li", function (d) { return d.querySelectorAll("main ul li").length >= 3; }],
+                    ["В footer есть текст", function (d) { return txt(d.querySelector("footer")) !== ""; }]
+                ]
+            },
+            {
+                title: "Визитка: оформление",
+                text: "Шаг 2: оформи страницу. Задай body цвет фона (не белый). Сделай шапку header цветной со светлым текстом по центру. Список .skills выстрой в ряд через display: flex, а каждому пункту добавь padding от 8px и скругление от 6px.",
+                tab: "css",
+                html: P1_HTML,
+                css: "body {\n    \n}\n\nheader {\n    \n}\n\n.skills {\n    \n}\n\n.skills li {\n    \n}\n",
+                hint: "body {\n    background-color: #f1f5f9;\n}\n\nheader {\n    background-color: #2563eb;\n    color: white;\n    text-align: center;\n}\n\n.skills {\n    display: flex;\n    gap: 10px;\n}\n\n.skills li {\n    padding: 10px 16px;\n    border-radius: 8px;\n}",
+                checks: [
+                    ["У body задан цвет фона (не белый)", function (d) { var s = cs(d, "body"); if (!s) return false; var c = rgb(s.backgroundColor); return hasColor(s.backgroundColor) && !(c[0] === 255 && c[1] === 255 && c[2] === 255); }],
+                    ["У header задан цвет фона", function (d) { var s = cs(d, "header"); return !!s && hasColor(s.backgroundColor); }],
+                    ["Текст в header светлый", function (d) { var s = cs(d, "header"); if (!s) return false; var c = rgb(s.color); return c[0] > 180 && c[1] > 180 && c[2] > 180; }],
+                    ["Текст в header по центру", function (d) { var s = cs(d, "header"); return !!s && s.textAlign === "center"; }],
+                    ["Список .skills выстроен в ряд (display: flex)", function (d) { var s = cs(d, ".skills"); return !!s && s.display === "flex"; }],
+                    ["У пунктов .skills li отступ padding не меньше 8px", function (d) { var s = cs(d, ".skills li"); return !!s && parseFloat(s.paddingTop) >= 8; }],
+                    ["У пунктов .skills li скругление не меньше 6px", function (d) { var s = cs(d, ".skills li"); return !!s && parseFloat(s.borderTopLeftRadius) >= 6; }]
+                ]
+            },
+            {
+                title: "Визитка: карточка и кнопка",
+                text: "Шаг 3: на странице появилась карточка контактов. Оформи .card: padding от 20px, скругление от 10px и тень box-shadow. Кнопку .contact-btn сделай со своим цветом фона, светлым текстом, скруглением от 6px и курсором pointer.",
+                tab: "css",
+                html: P3_HTML,
+                css: P2_CSS + "\n\n.card {\n    \n}\n\n.contact-btn {\n    \n}\n",
+                hint: ".card {\n    padding: 20px;\n    border-radius: 12px;\n    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);\n}\n\n.contact-btn {\n    background-color: #2563eb;\n    color: white;\n    border: none;\n    padding: 10px 20px;\n    border-radius: 8px;\n    cursor: pointer;\n}",
+                checks: [
+                    ["У .card отступ padding не меньше 20px", function (d) { var s = cs(d, ".card"); return !!s && parseFloat(s.paddingTop) >= 20; }],
+                    ["У .card скругление не меньше 10px", function (d) { var s = cs(d, ".card"); return !!s && parseFloat(s.borderTopLeftRadius) >= 10; }],
+                    ["У .card есть тень box-shadow", function (d) { var s = cs(d, ".card"); return !!s && s.boxShadow !== "none" && s.boxShadow !== ""; }],
+                    ["У кнопки свой цвет фона", function (d) {
+                        var s = cs(d, ".contact-btn"); if (!s) return false;
+                        var plain = d.createElement("button"); d.body.appendChild(plain);
+                        var def = d.defaultView.getComputedStyle(plain).backgroundColor;
+                        return hasColor(s.backgroundColor) && s.backgroundColor !== def;
+                    }],
+                    ["Текст кнопки светлый", function (d) { var s = cs(d, ".contact-btn"); if (!s) return false; var c = rgb(s.color); return c[0] > 200 && c[1] > 200 && c[2] > 200; }],
+                    ["У кнопки скругление не меньше 6px", function (d) { var s = cs(d, ".contact-btn"); return !!s && parseFloat(s.borderTopLeftRadius) >= 6; }],
+                    ["У кнопки курсор pointer", function (d) { var s = cs(d, ".contact-btn"); return !!s && s.cursor === "pointer"; }]
+                ]
+            },
+            {
+                title: "Визитка: оживляем кнопку",
+                text: "Шаг 4: добавь JavaScript. Контакт сейчас скрыт. По клику на кнопку «Написать мне» покажи его и поменяй текст кнопки на «Скрыть контакт». Ещё один клик снова прячет контакт и возвращает текст «Написать мне».",
+                tab: "javascript",
+                type: "script",
+                html: P4_HTML,
+                css: P3_CSS,
+                js: 'const contact = document.getElementById("contact");\nconst contactBtn = document.getElementById("contactBtn");\n\n// Допиши код: по клику показывай или прячи контакт и меняй текст кнопки\n',
+                hint: "Скрытие управляется свойством hidden:\n\ncontactBtn.addEventListener(\"click\", function () {\n    if (contact.hidden) {\n        contact.hidden = false;\n        contactBtn.textContent = \"Скрыть контакт\";\n    } else {\n        contact.hidden = true;\n        contactBtn.textContent = \"Написать мне\";\n    }\n});",
+                checks: [
+                    ["Сначала контакт скрыт", function () { var c = document.getElementById("contact"); return c.hidden || getComputedStyle(c).display === "none"; }],
+                    ["После клика контакт виден, а кнопка называется «Скрыть контакт»", function () {
+                        var c = document.getElementById("contact"), b = document.getElementById("contactBtn");
+                        b.click();
+                        return !c.hidden && getComputedStyle(c).display !== "none" && b.textContent.trim() === "Скрыть контакт";
+                    }],
+                    ["После второго клика контакт снова скрыт, а кнопка называется «Написать мне»", function () {
+                        var c = document.getElementById("contact"), b = document.getElementById("contactBtn");
+                        b.click();
+                        return (c.hidden || getComputedStyle(c).display === "none") && b.textContent.trim() === "Написать мне";
+                    }]
+                ]
+            },
+            {
+                title: "Список дел: разметка",
+                text: "Проект 2 из 2 — список дел. Шаг 1: собери разметку. Нужны заголовок h1, поле ввода input с id taskInput и подсказкой placeholder, кнопка button с id addBtn и текстом, а ещё пустой список ul с id list.",
+                html: "<!-- Собери разметку списка дел -->\n",
+                hint: "<h1>Мои дела</h1>\n<input id=\"taskInput\" type=\"text\" placeholder=\"Что нужно сделать?\">\n<button id=\"addBtn\">Добавить</button>\n<ul id=\"list\"></ul>",
+                checks: [
+                    ["Есть заголовок h1 с текстом", function (d) { return txt(d.querySelector("h1")) !== ""; }],
+                    ["Есть поле input с id taskInput и placeholder", function (d) { var i = d.querySelector("input#taskInput"); return !!i && (i.getAttribute("placeholder") || "").trim() !== ""; }],
+                    ["Есть кнопка button с id addBtn и текстом", function (d) { return txt(d.querySelector("button#addBtn")) !== ""; }],
+                    ["Есть список ul с id list", function (d) { return !!d.querySelector("ul#list"); }]
+                ]
+            },
+            {
+                title: "Список дел: стили",
+                text: "Шаг 2: оформи список. .container: max-width не больше 700px и по центру (margin: 30px auto). Поле #taskInput: padding от 8px и скругление от 6px. Кнопка #addBtn: свой цвет фона и курсор pointer. Пункты #list li: без маркеров (list-style: none) и padding от 8px.",
+                tab: "css",
+                html: P5_HTML,
+                css: ".container {\n    \n}\n\n#taskInput {\n    \n}\n\n#addBtn {\n    \n}\n\n#list li {\n    \n}\n",
+                hint: ".container {\n    max-width: 500px;\n    margin: 30px auto;\n}\n\n#taskInput {\n    padding: 10px;\n    border-radius: 8px;\n}\n\n#addBtn {\n    background-color: #2563eb;\n    color: white;\n    cursor: pointer;\n}\n\n#list li {\n    list-style: none;\n    padding: 10px;\n}",
+                checks: [
+                    [".container не шире 700px", function (d) { var s = cs(d, ".container"); return !!s && parseFloat(s.maxWidth) <= 700; }],
+                    [".container расположен по центру (margin: auto)", function (d) { var s = cs(d, ".container"); return !!s && s.marginLeft === s.marginRight && parseFloat(s.marginLeft) > 20; }],
+                    ["У поля ввода padding не меньше 8px", function (d) { var s = cs(d, "#taskInput"); return !!s && parseFloat(s.paddingTop) >= 8; }],
+                    ["У поля ввода скругление не меньше 6px", function (d) { var s = cs(d, "#taskInput"); return !!s && parseFloat(s.borderTopLeftRadius) >= 6; }],
+                    ["У кнопки свой цвет фона", function (d) {
+                        var s = cs(d, "#addBtn"); if (!s) return false;
+                        var plain = d.createElement("button"); d.body.appendChild(plain);
+                        var def = d.defaultView.getComputedStyle(plain).backgroundColor;
+                        return hasColor(s.backgroundColor) && s.backgroundColor !== def;
+                    }],
+                    ["У кнопки курсор pointer", function (d) { var s = cs(d, "#addBtn"); return !!s && s.cursor === "pointer"; }],
+                    ["У пунктов списка нет маркеров", function (d) { var s = cs(d, "#list li"); return !!s && s.listStyleType === "none"; }],
+                    ["У пунктов списка padding не меньше 8px", function (d) { var s = cs(d, "#list li"); return !!s && parseFloat(s.paddingTop) >= 8; }]
+                ]
+            },
+            {
+                title: "Список дел: добавление пунктов",
+                text: "Шаг 3: оживляем список. По клику на «Добавить» создай новый пункт li с текстом из поля ввода, добавь его в конец списка и очисти поле. Если поле пустое, ничего не добавляй.",
+                tab: "javascript",
+                type: "script",
+                html: P5_HTML,
+                css: P6_CSS,
+                js: 'const input = document.getElementById("taskInput");\nconst addBtn = document.getElementById("addBtn");\nconst list = document.getElementById("list");\n\n// Допиши код: по клику добавляй новый пункт li в список\n',
+                hint: "addBtn.addEventListener(\"click\", function () {\n    const text = input.value.trim();\n    if (text === \"\") return;\n\n    const li = document.createElement(\"li\");\n    li.textContent = text;\n    list.appendChild(li);\n    input.value = \"\";\n});",
+                checks: [
+                    ["Пустое поле: новый пункт не добавляется", function () {
+                        var n = document.querySelectorAll("#list li").length;
+                        document.getElementById("taskInput").value = "";
+                        document.getElementById("addBtn").click();
+                        return document.querySelectorAll("#list li").length === n;
+                    }],
+                    ["Новый пункт «Купить хлеб» добавляется в конец списка", function () {
+                        var n = document.querySelectorAll("#list li").length;
+                        document.getElementById("taskInput").value = "Купить хлеб";
+                        document.getElementById("addBtn").click();
+                        var items = document.querySelectorAll("#list li");
+                        return items.length === n + 1 && items[items.length - 1].textContent.trim() === "Купить хлеб";
+                    }],
+                    ["После добавления поле ввода очищается", function () { return document.getElementById("taskInput").value === ""; }]
+                ]
+            },
+            {
+                title: "Список дел: счётчик и удаление",
+                text: "Шаг 4, финальный: добавь счётчик и удаление. Пиши в #count текст «Всего дел: N», где N — число пунктов в списке, и обновляй его после каждого изменения. По клику на пункт списка он должен удаляться.",
+                tab: "javascript",
+                type: "script",
+                html: P8_HTML,
+                css: P6_CSS,
+                js: P7_JS + '\n\nconst count = document.getElementById("count");\n\n// Допиши код:\n// 1. функцию updateCount(): она пишет в #count текст «Всего дел: N»\n// 2. вызывай её после добавления пункта\n// 3. по клику на пункт списка удаляй его и снова обновляй счётчик\n',
+                hint: "function updateCount() {\n    count.textContent = \"Всего дел: \" + list.children.length;\n}\n\n// вызови updateCount() в конце обработчика кнопки «Добавить»\n\nlist.addEventListener(\"click\", function (e) {\n    if (e.target.tagName === \"LI\") {\n        e.target.remove();\n        updateCount();\n    }\n});",
+                checks: [
+                    ["Сначала счётчик показывает «Всего дел: 0»", function () { return document.getElementById("count").textContent.trim() === "Всего дел: 0"; }],
+                    ["После добавления «A» счётчик: «Всего дел: 1»", function () {
+                        document.getElementById("taskInput").value = "A";
+                        document.getElementById("addBtn").click();
+                        return document.getElementById("count").textContent.trim() === "Всего дел: 1";
+                    }],
+                    ["После добавления «B» счётчик: «Всего дел: 2»", function () {
+                        document.getElementById("taskInput").value = "B";
+                        document.getElementById("addBtn").click();
+                        return document.getElementById("count").textContent.trim() === "Всего дел: 2";
+                    }],
+                    ["Клик по пункту удаляет его, счётчик: «Всего дел: 1»", function () {
+                        var items = document.querySelectorAll("#list li");
+                        if (!items.length) return false;
+                        items[0].click();
+                        return document.querySelectorAll("#list li").length === 1 &&
+                            document.getElementById("count").textContent.trim() === "Всего дел: 1";
+                    }]
+                ]
+            }
+        ]
+    };
+
+    // ===== ALGO END =====
+
+
+    // ------------------------------------------------------------
+    //  Прогресс (сохраняется в браузере)
+    // ------------------------------------------------------------
+
+    function isDone(track, idx) {
+        var p = loadJson("ph_progress");
+        return Array.isArray(p[track]) && p[track].indexOf(idx) > -1;
+    }
+
+    function markDone(track, idx) {
+        var p = loadJson("ph_progress");
+        if (!Array.isArray(p[track])) p[track] = [];
+        var isNew = p[track].indexOf(idx) === -1;
+        if (isNew) p[track].push(idx);
+        saveJson("ph_progress", p);
+        return isNew;
+    }
+
+
+    // ------------------------------------------------------------
+    //  Уведомления и меню
+    // ------------------------------------------------------------
+
+    function toast(message, good, actionLabel, action) {
+
+        var t = document.createElement("div");
+        t.className = "toast" + (good ? " good" : "");
+
+        var m = document.createElement("div");
+        m.textContent = message;
+        t.appendChild(m);
+
+        if (actionLabel) {
+            var b = document.createElement("button");
+            b.className = "mini-btn primary";
+            b.textContent = actionLabel;
+            b.onclick = function () { t.remove(); action(); };
+            t.appendChild(b);
+        }
+
+        var x = document.createElement("button");
+        x.className = "mini-btn";
+        x.textContent = "Закрыть";
+        if (actionLabel) {
+            x.onclick = function () { t.remove(); };
+            t.appendChild(x);
+        }
+
+        $("toasts").appendChild(t);
+        setTimeout(function () { t.remove(); }, actionLabel ? 12000 : 3500);
+    }
+
+    function closeMenu() {
+        $("dropdown").hidden = true;
+        document.querySelectorAll(".menu-btn.open").forEach(function (b) { b.classList.remove("open"); });
+    }
+
+    function openMenu(anchor, items, side) {
+
+        var m = $("dropdown");
+        m.innerHTML = "";
+
+        items.forEach(function (it) {
+
+            if (it === "-") {
+                var sep = document.createElement("div");
+                sep.className = "dd-sep";
+                m.appendChild(sep);
+                return;
+            }
+
+            var row = document.createElement("div");
+            row.className = "dd-item";
+
+            var l = document.createElement("span");
+            l.textContent = it.label;
+            row.appendChild(l);
+
+            if (it.key) {
+                var k = document.createElement("span");
+                k.className = "dd-key";
+                k.textContent = it.key;
+                row.appendChild(k);
+            }
+
+            row.onclick = function (e) {
+                e.stopPropagation();
+                closeMenu();
+                it.run();
+            };
+
+            m.appendChild(row);
+        });
+
+        m.hidden = false;
+
+        var rect = anchor.getBoundingClientRect();
+
+        if (side === "right") {
+            m.style.left = rect.right + "px";
+            m.style.top = Math.max(30, rect.bottom - m.offsetHeight) + "px";
+        } else {
+            m.style.left = Math.min(rect.left, window.innerWidth - m.offsetWidth - 6) + "px";
+            m.style.top = rect.bottom + "px";
+        }
+    }
+
+    function editorAction(id) {
+        if (!editor) return;
+        var a = editor.getAction(id);
+        if (a) a.run(); else editor.trigger("menu", id, null);
+        editor.focus();
+    }
+
+    function themeLabel() { return settings.theme === "dark" ? "Светлая тема" : "Тёмная тема"; }
+
+    const MENUS = [
+        ["Файл", function () {
+            return [
+                { label: "Новый проект", run: function () { openFree(true); } },
+                { label: "Сохранить", key: "Ctrl+S", run: saveAll },
+                { label: "Поделиться ссылкой", run: shareLink },
+                { label: "Скачать index.html", run: downloadHtml }
+            ];
+        }],
+        ["Правка", function () {
+            return [
+                { label: "Отменить", key: "Ctrl+Z", run: function () { editorAction("undo"); } },
+                { label: "Повторить", key: "Ctrl+Y", run: function () { editorAction("redo"); } },
+                "-",
+                { label: "Найти", key: "Ctrl+F", run: function () { editorAction("actions.find"); } },
+                { label: "Заменить", key: "Ctrl+H", run: function () { editorAction("editor.action.startFindReplace"); } },
+                { label: "Форматировать документ", key: "Shift+Alt+F", run: function () { editorAction("editor.action.formatDocument"); } }
+            ];
+        }],
+        ["Вид", function () {
+            return [
+                { label: "Палитра команд", key: "F1", run: function () { editorAction("editor.action.quickCommand"); } },
+                "-",
+                { label: "Боковая панель", key: "Ctrl+B", run: toggleSidebar },
+                { label: "Нижняя панель", run: function () { showPanel($("panel").hidden); } },
+                { label: "Предпросмотр", run: togglePreview },
+                "-",
+                { label: themeLabel(), run: toggleTheme }
+            ];
+        }],
+        ["Запуск", function () {
+            return [
+                { label: "Запустить код", key: "Ctrl+Enter", run: runCode },
+                { label: "Проверить задание", run: checkTask },
+                { label: "Задача дня", run: openDaily },
+                { label: "Экзамен (5 задач, 20 минут)", run: startExam }
+            ];
+        }],
+        ["Справка", function () {
+            return [
+                { label: "Подсказка к заданию", run: toggleHint },
+                { label: "Горячие клавиши", run: showShortcuts },
+                { label: "🐞 Сообщить об ошибке", run: reportBug }
+            ];
+        }]
+    ];
+
+    function buildMenus() {
+
+        var box = $("menus");
+
+        MENUS.forEach(function (m) {
+
+            var b = document.createElement("div");
+            b.className = "menu-btn";
+            b.textContent = m[0];
+
+            b.onclick = function (e) {
+                e.stopPropagation();
+                var wasOpen = b.classList.contains("open");
+                closeMenu();
+                if (!wasOpen) {
+                    b.classList.add("open");
+                    openMenu(b, m[1](), "below");
+                }
+            };
+
+            box.appendChild(b);
+        });
+    }
+
+    function settingsItems() {
+        return [
+            { label: themeLabel(), run: toggleTheme },
+            { label: "Увеличить шрифт", key: "+", run: function () { changeFont(1); } },
+            { label: "Уменьшить шрифт", key: "−", run: function () { changeFont(-1); } },
+            { label: "Автозапуск: " + (settings.autorun ? "выключить" : "включить"), run: toggleAutorun },
+            { label: "Перенос строк: " + (settings.wrap ? "выключить" : "включить"), run: toggleWrap }
+        ];
+    }
+
+    function showShortcuts() {
+        toast("Ctrl+Enter — запустить код\nCtrl+S — сохранить\nF1 — палитра команд\nCtrl+B — боковая панель\nTab или Enter — раскрыть Emmet (!, div.box, ul>li*3, m10)", false);
+    }
+
+
+    // ------------------------------------------------------------
+    //  Настройки интерфейса
+    // ------------------------------------------------------------
+
+    function toggleTheme() {
+        settings.theme = settings.theme === "dark" ? "light" : "dark";
+        document.body.classList.toggle("light", settings.theme === "light");
+        if (window.monaco) monaco.editor.setTheme(settings.theme === "light" ? "vs" : "vs-dark");
+        saveSettings();
+    }
+
+    function changeFont(delta) {
+        settings.fontSize = Math.max(10, Math.min(28, settings.fontSize + delta));
+        if (editor) editor.updateOptions({ fontSize: settings.fontSize });
+        saveSettings();
+    }
+
+    function toggleAutorun() {
+        settings.autorun = !settings.autorun;
+        updateStatus();
+        saveSettings();
+    }
+
+    function toggleWrap() {
+        settings.wrap = !settings.wrap;
+        if (editor) editor.updateOptions({ wordWrap: settings.wrap ? "on" : "off" });
+        saveSettings();
+    }
+
+    function toggleSidebar() {
+        var s = $("sidebar");
+        s.hidden = !s.hidden;
+        $("rzSidebar").hidden = s.hidden;
+        $("actExplorer").classList.toggle("active", !s.hidden);
+    }
+
+    function showSidebar() {
+        if ($("sidebar").hidden) toggleSidebar();
+    }
+
+    function showPanel(show) {
+        $("panel").hidden = !show;
+        $("rzPanel").hidden = !show;
+    }
+
+    function togglePreview() {
+        var hide = !$("previewArea").hidden;
+        $("previewArea").hidden = hide;
+        $("rzPreview").hidden = hide;
+    }
+
+    function setPanelTab(t) {
+        panelTab = t;
+        ["problems", "check", "console"].forEach(function (k) {
+            $("p_" + k).hidden = k !== t;
+            $("pt_" + k).classList.toggle("active", k === t);
+        });
+    }
+
+    function makeResizer(el, onMove) {
+
+        el.addEventListener("pointerdown", function (e) {
+
+            e.preventDefault();
+            document.body.classList.add("dragging");
+            el.classList.add("active");
+            el.setPointerCapture(e.pointerId);
+
+            function move(ev) { onMove(ev); }
+
+            function up(ev) {
+                document.body.classList.remove("dragging");
+                el.classList.remove("active");
+                try { el.releasePointerCapture(ev.pointerId); } catch (err) { /* уже отпущен */ }
+                el.removeEventListener("pointermove", move);
+                el.removeEventListener("pointerup", up);
+            }
+
+            el.addEventListener("pointermove", move);
+            el.addEventListener("pointerup", up);
+        });
+    }
+
+    function initResizers() {
+
+        makeResizer($("rzSidebar"), function (e) {
+            var w = e.clientX - $("activity").offsetWidth;
+            $("sidebar").style.width = Math.max(160, Math.min(520, w)) + "px";
+        });
+
+        makeResizer($("rzPreview"), function (e) {
+            var rect = $("top").getBoundingClientRect();
+            var w = rect.right - e.clientX;
+            $("previewArea").style.width = Math.max(180, Math.min(rect.width - 260, w)) + "px";
+        });
+
+        makeResizer($("rzPanel"), function (e) {
+            var rect = $("workbench").getBoundingClientRect();
+            var h = rect.bottom - e.clientY;
+            $("panel").style.height = Math.max(70, Math.min(rect.height - 180, h)) + "px";
+        });
+    }
+
+
+    // ------------------------------------------------------------
+    //  Боковая панель: файлы и квесты
+    // ------------------------------------------------------------
+
+    const openTracks = { html: true, css: false, js: false, algo: false, func: false, proj: false };
+
+    function makeRow(extraClass, parts, onClick) {
+        var r = document.createElement("div");
+        r.className = "tree-row " + extraClass;
+        parts.forEach(function (p) { r.appendChild(p); });
+        r.onclick = onClick;
+        return r;
+    }
+
+    function span(text, cls) {
+        var s = document.createElement("span");
+        if (cls) s.className = cls;
+        s.textContent = text;
+        return s;
+    }
+
+    function renderFiles() {
+
+        var box = $("fileList");
+        box.innerHTML = "";
+
+        FILES.forEach(function (f) {
+            var icon = span(f.badge, "fi " + f.cls);
+            var name = span(f.name, "lbl");
+            var row = makeRow(f.lang === activeFile ? "active" : "", [icon, name], function () { openFile(f.lang); });
+            box.appendChild(row);
+        });
+    }
+
+    function renderQuests() {
+
+        var box = $("questTree");
+        box.innerHTML = "";
+
+        var total = 0;
+        var done = 0;
+
+        box.appendChild(makeRow(currentDaily ? "active" : "",
+            [span("📅"), span("Задача дня" + (PHStats.get().dailyDone ? " ✓" : ""), "lbl")],
+            openDaily));
+
+        box.appendChild(makeRow(examMode ? "active" : "",
+            [span("🎯"), span("Экзамен (5 задач)", "lbl")],
+            startExam));
+
+        box.appendChild(makeRow(currentTask === null && !examMode ? "active" : "",
+            [span("✏️"), span("Свободный режим", "lbl")],
+            function () { openFree(false); }));
+
+        Object.keys(QUESTS).forEach(function (key) {
+
+            var q = QUESTS[key];
+            var d = 0;
+
+            q.tasks.forEach(function (t, i) { if (isDone(key, i)) d++; });
+
+            total += q.tasks.length;
+            done += d;
+
+            box.appendChild(makeRow("folder",
+                [span(openTracks[key] ? "▾" : "▸"), span(q.icon), span(q.title, "lbl"), span(d + "/" + q.tasks.length, "count")],
+                function () { openTracks[key] = !openTracks[key]; renderQuests(); }));
+
+            if (openTracks[key]) {
+                q.tasks.forEach(function (t, i) {
+                    var finished = isDone(key, i);
+                    var active = key === currentTrack && i === currentIdx && currentTask !== null;
+                    box.appendChild(makeRow("child" + (active ? " active" : ""),
+                        [span(finished ? "✓" : "○", finished ? "done" : "todo"), span((i + 1) + ". " + t.title, "lbl")],
+                        function () { openTask(key, i); }));
+                });
+            }
+        });
+
+        $("progressFill").style.width = (total ? Math.round(done / total * 100) : 0) + "%";
+        $("sbQuests").textContent = "🎯 " + done + "/" + total;
+    }
+
+    function renderTabs() {
+
+        var box = $("tabs");
+        box.innerHTML = "";
+
+        FILES.forEach(function (f) {
+            var t = document.createElement("div");
+            t.className = "tab" + (f.lang === activeFile ? " active" : "");
+            t.appendChild(span(f.badge, "fi " + f.cls));
+            t.appendChild(span(f.name));
+            t.onclick = function () { openFile(f.lang); };
+            box.appendChild(t);
+        });
+
+        var path = ["Programer Help"];
+        if (currentTask) {
+            path.push(QUESTS[currentTrack].title);
+            path.push("Задание " + (currentIdx + 1));
+        }
+        path.push(fileInfo(activeFile).name);
+        $("crumbs").textContent = path.join("  ›  ");
+    }
+
+    function updateStatus() {
+        var f = fileInfo(activeFile);
+        $("sbLang").textContent = f.label;
+        $("sbAuto").textContent = "⚡ Автозапуск: " + (settings.autorun ? "вкл" : "выкл");
+        $("titleText").textContent = f.name + " — Programer Help";
+        $("pvUrl").textContent = "http://127.0.0.1:5500/index.html";
+    }
+
+    function openFile(lang) {
+
+        if (!editor) return;
+
+        if (editor.getModel() === models[activeFile]) {
+            viewStates[activeFile] = editor.saveViewState();
+        }
+
+        activeFile = lang;
+        editor.setModel(models[lang]);
+
+        if (viewStates[lang]) editor.restoreViewState(viewStates[lang]);
+
+        editor.focus();
+
+        renderTabs();
+        renderFiles();
+        updateStatus();
+    }
+
+
+    // ------------------------------------------------------------
+    //  Задания
+    // ------------------------------------------------------------
+
+    function setModels(h, c, j) {
+        viewStates = {};
+        models.html.setValue(h);
+        models.css.setValue(c);
+        models.javascript.setValue(j);
+    }
+
+    function renderTaskBanner() {
+
+        var b = $("taskBanner");
+
+        if (!currentTask) {
+            b.hidden = true;
+            $("btnCheck").hidden = true;
+            return;
+        }
+
+        var q = QUESTS[currentTrack];
+
+        b.hidden = false;
+        b.classList.remove("collapsed");
+        $("tbChev").textContent = "▾";
+        $("tbTitle").textContent = (examMode ? "🎯 Экзамен " + (exam.current + 1) + "/" + exam.picks.length + " · " : "") + (currentDaily ? "📅 Задача дня · " : "") + q.icon + " " + q.title + " · Задание " + (currentIdx + 1) + " из " + q.tasks.length + ". " + currentTask.title;
+        $("tbText").textContent = currentTask.text;
+        $("tbHint").textContent = currentTask.hint || "";
+        $("tbHint").hidden = true;
+        $("btnCheck").hidden = false;
+    }
+
+    function toggleHint() {
+        if (examMode) {
+            toast("На экзамене подсказки отключены.", false);
+            return;
+        }
+        if (!currentTask) {
+            toast("Подсказки есть только в заданиях квестов. Выбери задание слева.", false);
+            return;
+        }
+        $("taskBanner").classList.remove("collapsed");
+        $("tbChev").textContent = "▾";
+        $("tbHint").hidden = !$("tbHint").hidden;
+    }
+
+    function resetTask() {
+        if (!currentTask) return;
+        examOpening = examMode;
+        openTask(currentTrack, currentIdx, currentDaily);
+        examOpening = false;
+    }
+
+    function reportBug() {
+        var task = "";
+        if (currentTask) {
+            var q = QUESTS[currentTrack];
+            task = q.title + ", задание " + (currentIdx + 1) + ": " + currentTask.title;
+        }
+        window.location.href = "contacts.html?bug=1&from=" + encodeURIComponent("Редактор кода") +
+            (task ? "&task=" + encodeURIComponent(task) : "");
+    }
+
+    function setCheckMessage(text) {
+        var box = $("p_check");
+        box.innerHTML = "";
+        var d = document.createElement("div");
+        d.className = "p-empty";
+        d.textContent = text;
+        box.appendChild(d);
+    }
+
+    function openTask(track, idx, isDaily) {
+
+        if (examBlocked()) return;
+
+        var q = QUESTS[track];
+        var t = q && q.tasks[idx];
+
+        if (!t || !editor) return;
+
+        currentTrack = track;
+        currentIdx = idx;
+        currentTask = t;
+        currentDaily = !!isDaily;
+        openTracks[track] = true;
+
+        setModels(t.html || "", t.css || "", t.js || "");
+
+        renderTaskBanner();
+        setCheckMessage("Напиши решение и нажми «✔ Проверить».");
+        openFile(t.tab || q.tab);
+        runCode();
+        renderQuests();
+    }
+
+    function openFree(fresh) {
+
+        if (examBlocked()) return;
+
+        currentTrack = null;
+        currentTask = null;
+        currentDaily = false;
+        skipSave = false;
+
+        var saved = fresh ? {} : loadJson("ph_free");
+
+        var defaultHtml = [
+            "<!DOCTYPE html>",
+            '<html lang="ru">',
+            "<head>",
+            '    <meta charset="UTF-8">',
+            "    <title>Мой сайт</title>",
+            "<\/head>",
+            "<body>",
+            "",
+            "    <h1>Привет, мир!</h1>",
+            "",
+            "<\/body>",
+            "<\/html>"
+        ].join("\n");
+
+        setModels(
+            typeof saved.html === "string" ? saved.html : defaultHtml,
+            typeof saved.css === "string" ? saved.css : "body {\n    font-family: Arial;\n}",
+            typeof saved.javascript === "string" ? saved.javascript : 'console.log("Привет, мир!");'
+        );
+
+        renderTaskBanner();
+        setCheckMessage("Свободный режим: пиши любой код. Чтобы получить задание, выбери квест слева.");
+        openFile("html");
+        runCode();
+        renderQuests();
+    }
+
+    function scheduleSaveFree() {
+        if (currentTask || skipSave) return;
+        clearTimeout(saveTimer);
+        saveTimer = setTimeout(saveFree, 500);
+    }
+
+    function saveFree() {
+        if (currentTask) return;
+        saveJson("ph_free", { html: getCode("html"), css: getCode("css"), javascript: getCode("javascript") });
+    }
+
+    function saveAll() {
+        saveFree();
+        runCode();
+        toast("Файлы сохранены и запущены", true);
+    }
+
+    // ---------- Очки, серия дней и значки (тот же код, что в stats.js) ----------
+    // stats.js — очки опыта (XP), серия дней, значки и профиль ученика
+    (function (root) {
+
+        var KEY = "ph_stats";
+        var TOTALS = { html: 5, css: 5, js: 5, algo: 8, func: 8, proj: 8 };
+        var TRACK_BADGE = { html: "b_html", css: "b_css", js: "b_js", algo: "b_algo", func: "b_func", proj: "b_proj" };
+
+        var BADGES = {
+            first:   { icon: "🌱", title: "Первый шаг", text: "Выполнено первое задание" },
+            ten:     { icon: "🔟", title: "Десятка", text: "Выполнено 10 заданий" },
+            all:     { icon: "🏆", title: "Легенда", text: "Пройдены все задания" },
+            b_html:  { icon: "🌐", title: "Мастер HTML", text: "Пройден квест HTML" },
+            b_css:   { icon: "🎨", title: "Мастер CSS", text: "Пройден квест CSS" },
+            b_js:    { icon: "⚡", title: "Мастер JavaScript", text: "Пройден квест JavaScript" },
+            b_algo:  { icon: "🧮", title: "Алгоритмист", text: "Решены все задачи" },
+            b_func:  { icon: "🔧", title: "Мастер функций", text: "Пройден квест «Функции»" },
+            b_proj:  { icon: "🏗", title: "Строитель", text: "Пройден квест «Проекты»" },
+            exam:    { icon: "🎯", title: "Отличник", text: "Сдал экзамен без единой ошибки" },
+            streak3: { icon: "🔥", title: "3 дня подряд", text: "Занимался 3 дня подряд" },
+            streak7: { icon: "🚀", title: "Неделя подряд", text: "Занимался 7 дней подряд" },
+            daily:   { icon: "📅", title: "Задача дня", text: "Решил задачу дня" },
+            quiz:    { icon: "🧠", title: "Умник", text: "Ответил на все вопросы квиза правильно" }
+        };
+
+        function pad(n) { return n < 10 ? "0" + n : "" + n; }
+
+        function today() {
+            var d = new Date();
+            return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+        }
+
+        function dayNum(str) {
+            var p = str.split("-");
+            return Math.round(Date.UTC(+p[0], +p[1] - 1, +p[2]) / 86400000);
+        }
+
+        function read() {
+            var s = null;
+            try { s = JSON.parse(localStorage.getItem(KEY) || "null"); } catch (e) {}
+            return Object.assign({ xp: 0, streak: 0, last: "", badges: [], dailyDone: "", quiz: {} }, s || {});
+        }
+
+        function write(s) {
+            try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {}
+        }
+
+        function readProgress() {
+            try { return JSON.parse(localStorage.getItem("ph_progress") || "{}") || {}; } catch (e) { return {}; }
+        }
+
+        // считаем занятие: продлеваем серию дней
+        function touch(s) {
+            var t = today();
+            if (s.last === t) return;
+            if (s.last && dayNum(t) - dayNum(s.last) === 1) s.streak = (s.streak || 0) + 1;
+            else s.streak = 1;
+            s.last = t;
+        }
+
+        function award(s, id, fresh) {
+            if (s.badges.indexOf(id) === -1) {
+                s.badges.push(id);
+                fresh.push(id);
+            }
+        }
+
+        function counts() {
+            var p = readProgress();
+            var per = {};
+            var total = 0;
+            var all = 0;
+            Object.keys(TOTALS).forEach(function (k) {
+                var d = Math.min(Array.isArray(p[k]) ? p[k].length : 0, TOTALS[k]);
+                per[k] = d;
+                total += d;
+                all += TOTALS[k];
+            });
+            return { per: per, total: total, all: all };
+        }
+
+        function level(xp) { return Math.floor(xp / 100) + 1; }
+
+        function streakNow(s) {
+            if (!s.last) return 0;
+            return dayNum(today()) - dayNum(s.last) <= 1 ? s.streak : 0;
+        }
+
+        function checkBadges(s, fresh, track) {
+            var c = counts();
+            if (c.total >= 1) award(s, "first", fresh);
+            if (c.total >= 10) award(s, "ten", fresh);
+            if (track && TRACK_BADGE[track] && c.per[track] >= TOTALS[track]) award(s, TRACK_BADGE[track], fresh);
+            if (c.total >= c.all) award(s, "all", fresh);
+            if (s.streak >= 3) award(s, "streak3", fresh);
+            if (s.streak >= 7) award(s, "streak7", fresh);
+        }
+
+        // вызывается, когда задание пройдено
+        function onTaskDone(track, isNew, daily) {
+            var s = read();
+            var fresh = [];
+            var gained = 0;
+
+            touch(s);
+
+            if (isNew) gained += (track === "algo" || track === "func") ? 20 : 10;
+
+            if (daily && s.dailyDone !== today()) {
+                gained += 15;
+                s.dailyDone = today();
+                award(s, "daily", fresh);
+            }
+
+            s.xp += gained;
+            checkBadges(s, fresh, track);
+            write(s);
+
+            return { xp: gained, badges: fresh, streak: s.streak, level: level(s.xp) };
+        }
+
+        // вызывается, когда пройден квиз
+        function onQuiz(id, score, total) {
+            var s = read();
+            var fresh = [];
+            var gained = 0;
+
+            touch(s);
+
+            var prev = s.quiz[id] || 0;
+            if (score > prev) {
+                gained = (score - prev) * 2;
+                s.quiz[id] = score;
+            }
+
+            s.xp += gained;
+            if (score === total) award(s, "quiz", fresh);
+            checkBadges(s, fresh, null);
+            write(s);
+
+            return { xp: gained, badges: fresh, streak: s.streak, level: level(s.xp) };
+        }
+
+        // вызывается, когда экзамен завершён
+        function onExam(score, total) {
+            var s = read();
+            var fresh = [];
+
+            touch(s);
+
+            var gained = score * 5;
+            s.xp += gained;
+
+            if (score === total) award(s, "exam", fresh);
+            checkBadges(s, fresh, null);
+            write(s);
+
+            return { xp: gained, badges: fresh, streak: s.streak, level: level(s.xp) };
+        }
+
+        function get() {
+            var s = read();
+            return {
+                xp: s.xp,
+                level: level(s.xp),
+                inLevel: s.xp % 100,
+                streak: streakNow(s),
+                badges: s.badges,
+                dailyDone: s.dailyDone === today(),
+                quiz: s.quiz
+            };
+        }
+
+        function el(tag, css, text) {
+            var e = document.createElement(tag);
+            if (css) e.style.cssText = css;
+            if (text !== undefined) e.textContent = text;
+            return e;
+        }
+
+        // профиль ученика (на странице уроков)
+        function renderProfile(box) {
+
+            var g = get();
+            box.innerHTML = "";
+            box.style.cssText = "background:#fff;border-radius:12px;box-shadow:0 2px 10px #00000010;padding:20px;margin:0 0 30px;text-align:left";
+
+            var top = el("div", "display:flex;flex-wrap:wrap;gap:20px;align-items:center;justify-content:space-between");
+
+            var left = el("div", "flex:1;min-width:220px");
+            left.appendChild(el("div", "font-size:20px;font-weight:bold;color:#0f172a", "🎖 Уровень " + g.level));
+
+            var bar = el("div", "height:10px;background:#e2e8f0;border-radius:6px;overflow:hidden;margin:8px 0 4px");
+            bar.appendChild(el("div", "height:100%;background:#2563eb;width:" + g.inLevel + "%"));
+            left.appendChild(bar);
+            left.appendChild(el("div", "font-size:13px;color:#64748b", "Опыт: " + g.xp + " XP · до следующего уровня " + (100 - g.inLevel)));
+            top.appendChild(left);
+
+            top.appendChild(el("div", "font-size:18px;font-weight:bold;color:#ea580c", "🔥 Серия: " + g.streak + " дн."));
+
+            var daily = el("a", "display:inline-block;padding:11px 18px;border-radius:8px;text-decoration:none;font-weight:bold;color:#fff;background:" + (g.dailyDone ? "#16a34a" : "#2563eb"),
+                g.dailyDone ? "✅ Задача дня решена" : "📅 Решить задачу дня");
+            daily.href = "code.html?daily=1";
+            top.appendChild(daily);
+
+            box.appendChild(top);
+
+            var names = Object.keys(BADGES);
+            var got = names.filter(function (k) { return g.badges.indexOf(k) > -1; }).length;
+
+            box.appendChild(el("div", "margin:16px 0 8px;font-size:13px;color:#64748b", "Значки: " + got + " из " + names.length));
+
+            var row = el("div", "display:flex;flex-wrap:wrap;gap:10px");
+
+            names.forEach(function (k) {
+                var has = g.badges.indexOf(k) > -1;
+                var b = el("span", "font-size:28px;width:48px;height:48px;display:flex;align-items:center;justify-content:center;border-radius:10px;background:#f1f5f9;" + (has ? "" : "filter:grayscale(1);opacity:.3"), BADGES[k].icon);
+                b.title = BADGES[k].title + ": " + BADGES[k].text + (has ? "" : " (ещё не получен)");
+                row.appendChild(b);
+            });
+
+            box.appendChild(row);
+        }
+
+        // карточки, которые добавляются на страницу уроков
+        var TRACK_CARDS = [
+            { key: "algo", title: "Задачи 🧮", text: "Олимпиадные задачи на условия: напиши функцию, а сайт проверит её по тестам.", href: "code.html?track=algo&task=1", btn: "Решать задачи" },
+            { key: "func", title: "Функции 🔧", text: "Учись писать свои функции: от квадрата числа до чисел Фибоначчи.", href: "code.html?track=func&task=1", btn: "Начать" },
+            { key: "proj", title: "Проекты 🏗", text: "Собери настоящие мини-сайты шаг за шагом: сайт-визитку и список дел.", href: "code.html?track=proj&task=1", btn: "Строить проекты" }
+        ];
+
+        function findCard(box, prefix) {
+            var cards = box.querySelectorAll(".card");
+            for (var i = 0; i < cards.length; i++) {
+                var h = cards[i].querySelector("h2");
+                if (h && h.textContent.trim().indexOf(prefix) === 0) return cards[i];
+            }
+            return null;
+        }
+
+        function makeCard(title, text, href, btn) {
+            var card = el("div");
+            card.className = "card";
+            card.appendChild(el("h2", "", title));
+            card.appendChild(el("p", "", text));
+            var a = el("a", "", btn);
+            a.href = href;
+            card.appendChild(a);
+            return card;
+        }
+
+        function addBar(card, key) {
+
+            if (/Выполнено:|Пройдено:/.test(card.textContent)) return;
+
+            var d = Math.min(counts().per[key], TOTALS[key]);
+            var total = TOTALS[key];
+
+            var wrap = el("div", "margin:0 0 18px");
+            wrap.appendChild(el("div", "font-size:13px;color:#64748b;margin-bottom:6px",
+                (d === total ? "✅ Пройдено: " : "Выполнено: ") + d + " из " + total));
+
+            var bar = el("div", "height:8px;background:#e2e8f0;border-radius:5px;overflow:hidden");
+            bar.appendChild(el("div", "height:100%;background:#22c55e;width:" + Math.round(d / total * 100) + "%"));
+            wrap.appendChild(bar);
+
+            card.insertBefore(wrap, card.querySelector("a"));
+        }
+
+        // дополнения на странице уроков: полоски прогресса, новые карточки, сертификаты
+        function addExtras() {
+
+            var box = document.querySelector(".cards");
+            if (!box || box.getAttribute("data-ph-extras")) return;
+            box.setAttribute("data-ph-extras", "1");
+
+            var byTitle = { "HTML": "html", "CSS": "css", "JavaScript": "js" };
+
+            box.querySelectorAll(".card").forEach(function (card) {
+                var h = card.querySelector("h2");
+                var key = h && byTitle[h.textContent.trim()];
+                if (key) addBar(card, key);
+            });
+
+            TRACK_CARDS.forEach(function (c) {
+                var card = findCard(box, c.title.split(" ")[0]);
+                if (!card) {
+                    card = makeCard(c.title, c.text, c.href, c.btn);
+                    box.appendChild(card);
+                }
+                addBar(card, c.key);
+            });
+
+            if (!findCard(box, "Экзамен")) {
+                box.appendChild(makeCard("Экзамен 🎯", "5 случайных задач за 20 минут без подсказок. Проверь, чему ты научился.", "code.html?exam=1", "Начать экзамен"));
+            }
+
+            if (!findCard(box, "Шпаргалка")) {
+                box.appendChild(makeCard("Шпаргалка 📚", "Теги, свойства и команды в одном месте. Есть поиск, копирование и запуск примеров.", "cheatsheet.html", "Открыть шпаргалку"));
+            }
+
+            // сертификаты у пройденных квестов
+            var c = counts();
+            var keyByPrefix = { "HTML": "html", "CSS": "css", "JavaScript": "js", "Задачи": "algo", "Функции": "func", "Проекты": "proj" };
+
+            box.querySelectorAll(".card").forEach(function (card) {
+                var h = card.querySelector("h2");
+                if (!h || card.querySelector("a[href^='certificate.html']")) return;
+
+                var first = h.textContent.trim().split(" ")[0];
+                var key = keyByPrefix[first];
+
+                if (key && c.per[key] >= TOTALS[key]) {
+                    var wrap = el("div", "margin-top:14px");
+                    var a = el("a", "display:inline-block;background:none;color:#16a34a;font-weight:bold;font-size:14px;padding:0;text-decoration:none", "🎓 Получить сертификат");
+                    a.href = "certificate.html?track=" + key;
+                    wrap.appendChild(a);
+                    card.appendChild(wrap);
+                }
+            });
+
+            // общий итог под профилем
+            if (!/Всего выполнено/.test(document.body.textContent)) {
+                var total = 0;
+                var sum = 0;
+                Object.keys(TOTALS).forEach(function (k) { total += TOTALS[k]; sum += c.per[k]; });
+
+                var line = el("div", "margin:-15px 0 30px;font-weight:bold;color:#2563eb", "Всего выполнено: " + sum + " из " + total);
+                box.parentNode.insertBefore(line, box);
+            }
+        }
+
+        function init() {
+            var p = document.getElementById("ph-profile");
+            if (p) renderProfile(p);
+            addExtras();
+        }
+
+        root.PHStats = {
+            BADGES: BADGES,
+            TOTALS: TOTALS,
+            setTotals: function (t) { Object.keys(t).forEach(function (k) { TOTALS[k] = t[k]; }); },
+            today: today,
+            get: get,
+            onTaskDone: onTaskDone,
+            onQuiz: onQuiz,
+            onExam: onExam,
+            renderProfile: renderProfile
+        };
+
+        if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+        else init();
+
+    })(window);
+
+    PHStats.setTotals({
+        html: QUESTS.html.tasks.length,
+        css: QUESTS.css.tasks.length,
+        js: QUESTS.js.tasks.length,
+        algo: QUESTS.algo.tasks.length,
+        func: QUESTS.func.tasks.length,
+        proj: QUESTS.proj.tasks.length
+    });
+
+    function updateStatsBar() {
+        var g = PHStats.get();
+        $("sbStats").textContent = "🔥 " + g.streak + "  ⭐ " + g.xp + " XP · ур. " + g.level;
+    }
+
+    function announceGain(gain) {
+        if (gain.xp > 0) toast("+" + gain.xp + " XP ⭐", true);
+        gain.badges.forEach(function (k) {
+            var b = PHStats.BADGES[k];
+            toast("🏅 Новый значок: " + b.icon + " " + b.title + " — " + b.text, true);
+        });
+    }
+
+    // Задача дня: у всех учеников в один день одна и та же задача из квестов «Задачи» и «Функции»
+    function dailyPick() {
+        var pool = [];
+        ["algo", "func"].forEach(function (k) {
+            QUESTS[k].tasks.forEach(function (t, i) { pool.push([k, i]); });
+        });
+        var p = PHStats.today().split("-");
+        var dayNumber = Math.round(Date.UTC(+p[0], +p[1] - 1, +p[2]) / 86400000);
+        return pool[dayNumber % pool.length];
+    }
+
+    function openDaily() {
+        if (examBlocked()) return;
+        var pick = dailyPick();
+        openTask(pick[0], pick[1], true);
+    }
+
+    // ---------- Экзамен: 5 случайных задач за 20 минут без подсказок ----------
+
+    const EXAM_SECONDS = 20 * 60;
+
+    function pad2(n) { return n < 10 ? "0" + n : "" + n; }
+
+    function fmtTime(sec) {
+        sec = Math.max(0, sec);
+        return pad2(Math.floor(sec / 60)) + ":" + pad2(sec % 60);
+    }
+
+    function examBlocked() {
+        if (examMode && !examOpening) {
+            toast("Идёт экзамен. Сначала заверши его кнопкой «Завершить» над редактором.", false);
+            return true;
+        }
+        return false;
+    }
+
+    function examLeft() {
+        return Math.round((exam.endsAt - Date.now()) / 1000);
+    }
+
+    function renderExamBar() {
+
+        if (!examMode) return;
+
+        $("exInfo").textContent = "Задача " + (exam.current + 1) + " из " + exam.picks.length;
+        $("exSkip").textContent = exam.current >= exam.picks.length - 1 ? "Закончить" : "Пропустить →";
+
+        var dots = $("exDots");
+        dots.innerHTML = "";
+
+        exam.picks.forEach(function (p, i) {
+            var d = document.createElement("span");
+            d.className = exam.passed[i] ? "ok" : i === exam.current ? "cur" : "";
+            dots.appendChild(d);
+        });
+
+        var t = fmtTime(examLeft());
+        $("exTime").textContent = "⏱ " + t;
+        $("sbExam").textContent = "⏱ " + t;
+    }
+
+    function examTick() {
+        if (!examMode) return;
+        if (examLeft() <= 0) { finishExam(true); return; }
+        renderExamBar();
+    }
+
+    function examOpenTask(i) {
+        exam.current = i;
+        examOpening = true;
+        openTask(exam.picks[i][0], exam.picks[i][1]);
+        examOpening = false;
+        renderExamBar();
+    }
+
+    function startExam() {
+
+        if (!editor) return;
+
+        if (examMode) {
+            toast("Экзамен уже идёт.", false);
+            return;
+        }
+
+        var picks = [];
+
+        ["html", "css", "js", "algo", "func"].forEach(function (k) {
+            picks.push([k, Math.floor(Math.random() * QUESTS[k].tasks.length)]);
+        });
+
+        exam = {
+            picks: picks,
+            current: 0,
+            passed: picks.map(function () { return false; }),
+            endsAt: Date.now() + EXAM_SECONDS * 1000,
+            timer: null
+        };
+
+        examMode = true;
+
+        $("examBar").hidden = false;
+        $("sbExam").hidden = false;
+        $("tbHintBtn").hidden = true;
+
+        exam.timer = setInterval(examTick, 1000);
+
+        toast("Экзамен начался: 5 задач, 20 минут. Подсказки отключены. Удачи! 🍀", true);
+        examOpenTask(0);
+    }
+
+    function examOnPass() {
+        exam.passed[exam.current] = true;
+        renderExamBar();
+    }
+
+    function examNext() {
+        if (!examMode) return;
+        if (exam.current < exam.picks.length - 1) examOpenTask(exam.current + 1);
+        else finishExam(false);
+    }
+
+    function finishExam(timeUp) {
+
+        if (!examMode) return;
+
+        clearInterval(exam.timer);
+
+        var picks = exam.picks;
+        var passed = exam.passed;
+        var score = passed.filter(Boolean).length;
+        var used = EXAM_SECONDS - Math.max(0, examLeft());
+        var gain = PHStats.onExam(score, picks.length);
+
+        examMode = false;
+        exam = null;
+
+        $("examBar").hidden = true;
+        $("sbExam").hidden = true;
+        $("tbHintBtn").hidden = false;
+
+        updateStatsBar();
+        showExamResult(picks, passed, score, used, gain, timeUp);
+    }
+
+    function showExamResult(picks, passed, score, used, gain, timeUp) {
+
+        var card = $("examCard");
+        card.innerHTML = "";
+
+        var perfect = score === picks.length;
+
+        var h = document.createElement("h2");
+        h.textContent = (perfect ? "🏆 " : score >= 3 ? "👍 " : "💪 ") + "Результат: " + score + " из " + picks.length;
+        card.appendChild(h);
+
+        var sub = document.createElement("div");
+        sub.className = "ex-sub";
+        sub.textContent = (timeUp ? "Время вышло. " : "") + "Затрачено: " + fmtTime(used);
+        card.appendChild(sub);
+
+        picks.forEach(function (p, i) {
+            var q = QUESTS[p[0]];
+            var row = document.createElement("div");
+            row.className = "ex-row " + (passed[i] ? "ok" : "bad");
+            row.textContent = (passed[i] ? "✓ " : "✗ ") + q.title + ": " + q.tasks[p[1]].title;
+            card.appendChild(row);
+        });
+
+        var extra = [];
+        if (gain.xp > 0) extra.push("+" + gain.xp + " XP ⭐");
+        gain.badges.forEach(function (k) {
+            var b = PHStats.BADGES[k];
+            extra.push("🏅 Новый значок: " + b.icon + " " + b.title);
+        });
+
+        if (extra.length) {
+            var g = document.createElement("div");
+            g.className = "ex-gain";
+            g.innerHTML = "";
+            extra.forEach(function (t) {
+                var line = document.createElement("div");
+                line.textContent = t;
+                g.appendChild(line);
+            });
+            card.appendChild(g);
+        }
+
+        var btns = document.createElement("div");
+        btns.className = "ex-btns";
+
+        var again = document.createElement("button");
+        again.className = "mini-btn primary";
+        again.textContent = "Ещё раз";
+        again.onclick = function () { $("examOverlay").hidden = true; openFree(false); startExam(); };
+
+        var close = document.createElement("button");
+        close.className = "mini-btn";
+        close.textContent = "Закрыть";
+        close.onclick = function () { $("examOverlay").hidden = true; openFree(false); };
+
+        btns.appendChild(again);
+        btns.appendChild(close);
+        card.appendChild(btns);
+
+        $("examOverlay").hidden = false;
+    }
+
+    // ---------- Ссылка «Поделиться кодом» ----------
+
+    function encodeShare(obj) {
+        var bytes = new TextEncoder().encode(JSON.stringify(obj));
+        var bin = "";
+        for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+        return encodeURIComponent(btoa(bin));
+    }
+
+    function decodeShare(raw) {
+        try {
+            var bin = atob(String(raw).replace(/ /g, "+"));
+            var bytes = new Uint8Array(bin.length);
+            for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+            return JSON.parse(new TextDecoder().decode(bytes));
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function copyText(text, done) {
+
+        function fallback() {
+            var ta = document.createElement("textarea");
+            ta.value = text;
+            ta.style.position = "fixed";
+            ta.style.opacity = "0";
+            document.body.appendChild(ta);
+            ta.select();
+            var ok = false;
+            try { ok = document.execCommand("copy"); } catch (e) { ok = false; }
+            ta.remove();
+            done(ok);
+        }
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(function () { done(true); }, fallback);
+        } else {
+            fallback();
+        }
+    }
+
+    function shareLink() {
+
+        var base = window.location.href.split("?")[0].split("#")[0];
+
+        var url = base + "?code=" + encodeShare({
+            h: getCode("html"),
+            c: getCode("css"),
+            j: getCode("javascript")
+        }) + "&tab=" + activeFile;
+
+        if (url.length > 8000) {
+            toast("Код слишком длинный для ссылки. Скачай его через меню «Файл → Скачать index.html».", false);
+            return;
+        }
+
+        copyText(url, function (ok) {
+            toast(ok ? "Ссылка скопирована! Отправь её другу или учителю." : "Не удалось скопировать автоматически. Ссылка: " + url, ok);
+        });
+    }
+
+    function openShared(raw, tab) {
+
+        if (examBlocked()) return;
+
+        var data = decodeShare(raw);
+
+        if (!data) {
+            toast("Не удалось открыть код по ссылке. Открыт свободный режим.", false);
+            openFree(false);
+            return;
+        }
+
+        currentTrack = null;
+        currentTask = null;
+        currentDaily = false;
+        skipSave = true;
+
+        setModels(data.h || "", data.c || "", data.j || "");
+
+        renderTaskBanner();
+        setCheckMessage("Открыт код по ссылке. Меняй его и смотри результат. Твой свободный проект не затронут.");
+        openFile(tab === "css" || tab === "javascript" ? tab : "html");
+        runCode();
+        renderQuests();
+
+        toast("Открыт пример по ссылке. Меняй код и смотри результат!", true);
+    }
+
+    function downloadHtml() {
+        var blob = new Blob([buildDocument(null, true)], { type: "text/html" });
+        var a = document.createElement("a");
+        a.href = URL.createObjectURL(blob);
+        a.download = "index.html";
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+    }
+
+
+    // ------------------------------------------------------------
+    //  Консоль и проблемы
+    // ------------------------------------------------------------
+
+    function updateBadge(id, count) {
+        var b = $(id);
+        b.hidden = count === 0;
+        b.textContent = String(count);
+    }
+
+    function clearConsole() {
+        $("p_console").innerHTML = "";
+        consoleCount = 0;
+        updateBadge("bd_console", 0);
+    }
+
+    function addConsole(type, text) {
+
+        var line = document.createElement("div");
+        line.className = "cl " + type;
+        line.textContent = (type === "error" ? "✖ " : type === "warn" ? "⚠ " : "› ") + text;
+
+        var box = $("p_console");
+        box.appendChild(line);
+
+        consoleCount++;
+        updateBadge("bd_console", consoleCount);
+
+        var body = box.parentNode;
+        body.scrollTop = body.scrollHeight;
+
+        // В свободном режиме вывод консоли — главный результат
+        if (!currentTask && panelTab !== "console" && !$("panel").hidden) setPanelTab("console");
+    }
+
+    function refreshProblems() {
+
+        if (!window.monaco) return;
+
+        var box = $("p_problems");
+        box.innerHTML = "";
+
+        var errors = 0;
+        var warns = 0;
+        var any = false;
+
+        FILES.forEach(function (f) {
+
+            var markers = monaco.editor.getModelMarkers({ resource: models[f.lang].uri });
+
+            markers.forEach(function (m) {
+
+                any = true;
+                if (m.severity === 8) errors++;
+                if (m.severity === 4) warns++;
+
+                var row = document.createElement("div");
+                row.className = "prob";
+                row.appendChild(span(m.severity === 8 ? "⊗" : "⚠", m.severity === 8 ? "bad" : ""));
+                row.appendChild(span(m.message));
+                row.appendChild(span(f.name + " [Стр " + m.startLineNumber + ", стлб " + m.startColumn + "]", "src"));
+
+                row.onclick = function () {
+                    openFile(f.lang);
+                    editor.setPosition({ lineNumber: m.startLineNumber, column: m.startColumn });
+                    editor.revealLineInCenter(m.startLineNumber);
+                };
+
+                box.appendChild(row);
+            });
+        });
+
+        if (!any) {
+            var empty = document.createElement("div");
+            empty.className = "p-empty";
+            empty.textContent = "Проблем в коде не обнаружено.";
+            box.appendChild(empty);
+        }
+
+        $("sbProblems").innerHTML = "⊗ " + errors + " &nbsp;⚠ " + warns;
+        updateBadge("bd_problems", errors + warns);
+    }
+
+
+    // ------------------------------------------------------------
+    //  Запуск кода и предпросмотр
+    // ------------------------------------------------------------
+
+    const CONSOLE_HOOK =
+        "(function(){" +
+        "function fmt(a){return Array.prototype.map.call(a,function(x){try{return (typeof x==='object'&&x!==null)?JSON.stringify(x):String(x);}catch(e){return String(x);}}).join(' ');}" +
+        "function send(t,a){try{parent.postMessage({phConsole:true,type:t,text:fmt(a)},'*');}catch(e){}}" +
+        "['log','info','warn','error'].forEach(function(m){var o=console[m];console[m]=function(){send(m,arguments);try{o.apply(console,arguments);}catch(e){}};});" +
+        "window.addEventListener('error',function(e){send('error',[e.message]);});" +
+        "window.addEventListener('unhandledrejection',function(e){send('error',['Promise: '+(e.reason&&e.reason.message||e.reason)]);});" +
+        "})();";
+
+    function buildDocument(extraScript, clean, noScripts) {
+
+        // Защита: закрывающий тег скрипта в пользовательском JS не должен ломать страницу
+        const safeJs = getCode("javascript").replace(
+            new RegExp("<" + "/script", "gi"),
+            "<" + "\\/" + "script"
+        );
+
+        const parts = [
+            "<!DOCTYPE html>",
+            '<html lang="ru">',
+            "<head>",
+            '<meta charset="UTF-8">',
+            "<style>",
+            getCode("css"),
+            "<\/style>",
+            "<\/head>",
+            "<body>",
+            getCode("html")
+        ];
+
+        if (!clean) {
+            parts.push("<" + "script>", CONSOLE_HOOK, "<" + "/script>");
+        }
+
+        if (!noScripts) {
+            parts.push("<" + "script>", safeJs, "<" + "/script>");
+        }
+
+        if (extraScript && !noScripts) {
+            parts.push("<" + "script>", extraScript, "<" + "/script>");
+        }
+
+        parts.push("<\/body>", "<\/html>");
+
+        return parts.join("\n");
+    }
+
+    function runCode() {
+        if (!editor) return;
+        clearConsole();
+        preview.srcdoc = buildDocument(null, false);
+    }
+
+    function scheduleRun() {
+        if (!settings.autorun) return;
+        clearTimeout(autoTimer);
+        autoTimer = setTimeout(function () {
+            if (jsCheckHandler) return;
+            runCode();
+        }, 700);
+    }
+
+
+    // ------------------------------------------------------------
+    //  Проверка заданий
+    // ------------------------------------------------------------
+
+    function buildHarness(checks) {
+
+        var tests = "[" + checks.map(function (c) {
+            return "[" + JSON.stringify(c[0]) + "," + c[1].toString() + (c[2] ? "," + c[2].toString() : "") + "]";
+        }).join(",") + "]";
+
+        return "(function(){" +
+            "var tests=" + tests + ";" +
+            "var res=[];" +
+            "for(var i=0;i<tests.length;i++){" +
+                "var ok=false;var got;" +
+                "try{ok=!!tests[i][1]();}catch(e){ok=false;}" +
+                "if(!ok&&tests[i][2]){try{got=tests[i][2]();}catch(e){got='ошибка в коде';}}" +
+                "res.push([tests[i][0],ok,got]);" +
+            "}" +
+            "parent.postMessage({phCheck:true,results:res},'*');" +
+        "})();";
+    }
+
+    function checkTask() {
+
+        if (!editor) return;
+
+        if (!currentTask) {
+            toast("Сейчас свободный режим. Выбери задание в квестах слева, чтобы проверить решение.", false);
+            return;
+        }
+
+        var q = QUESTS[currentTrack];
+        var checks = currentTask.checks;
+        var taskType = currentTask.type || q.type;
+
+        clearTimeout(autoTimer);
+        setPanelTab("check");
+        showPanel(true);
+        setCheckMessage("Проверяем…");
+
+        if (taskType === "script") {
+
+            // JavaScript: проверка выполняется внутри страницы результата
+            clearConsole();
+            if (jsCheckTimer) clearTimeout(jsCheckTimer);
+
+            jsCheckHandler = function (results) {
+                clearTimeout(jsCheckTimer);
+                jsCheckHandler = null;
+                showResult(results, false);
+                runCode();
+            };
+
+            jsCheckTimer = setTimeout(function () {
+                jsCheckHandler = null;
+                showResult(checks.map(function (c) { return [c[0], false]; }), true);
+                runCode();
+            }, 2500);
+
+            preview.srcdoc = buildDocument(buildHarness(checks), false);
+
+        } else {
+
+            // HTML и CSS: проверка в скрытом iframe
+            runCode();
+
+            var frame = document.createElement("iframe");
+            frame.setAttribute("sandbox", "allow-same-origin");
+            frame.className = "checker";
+
+            frame.onload = function () {
+                var doc = frame.contentDocument;
+                var results = checks.map(function (c) {
+                    var ok = false;
+                    try { ok = !!c[1](doc); } catch (e) { ok = false; }
+                    return [c[0], ok];
+                });
+                frame.remove();
+                showResult(results, false);
+            };
+
+            // srcdoc задаём ДО добавления на страницу, иначе onload сработает
+            // на пустом документе about:blank и проверка пройдёт по пустой странице
+            frame.srcdoc = buildDocument(null, true, true);
+            document.body.appendChild(frame);
+        }
+    }
+
+    function showResult(results, crashed) {
+
+        var box = $("p_check");
+        box.innerHTML = "";
+
+        var total = results.length;
+        var passed = results.filter(function (r) { return r[1]; }).length;
+        var allOk = passed === total;
+
+        var title = document.createElement("div");
+        title.className = "res-title " + (allOk ? "ok" : "fail");
+
+        if (allOk) {
+            title.textContent = "🎉 Отлично! Задание выполнено! (" + passed + " из " + total + ")";
+        } else if (crashed) {
+            title.textContent = "Код не запустился. Проверь, нет ли опечаток и лишних скобок.";
+        } else {
+            title.textContent = "Пока не всё получилось: " + passed + " из " + total;
+        }
+
+        box.appendChild(title);
+
+        var list = document.createElement("div");
+        list.className = "res-list";
+
+        results.forEach(function (r) {
+            var line = document.createElement("div");
+            line.className = r[1] ? "ok" : "bad";
+            line.textContent = (r[1] ? "✓ " : "✗ ") + r[0] + (!r[1] && r[2] !== undefined ? "   (твой ответ: " + r[2] + ")" : "");
+            list.appendChild(line);
+        });
+
+        box.appendChild(list);
+
+        if (!allOk) {
+            var tip = document.createElement("div");
+            tip.className = "p-empty";
+            tip.style.marginTop = "6px";
+            tip.textContent = "Застрял? Нажми «💡 Подсказка» над редактором.";
+            box.appendChild(tip);
+            return;
+        }
+
+        var isNew = markDone(currentTrack, currentIdx);
+        var gain = PHStats.onTaskDone(currentTrack, isNew, currentDaily);
+        renderQuests();
+        updateStatsBar();
+        announceGain(gain);
+
+        var q = QUESTS[currentTrack];
+        var hasNext = currentIdx + 1 < q.tasks.length;
+        var track = currentTrack;
+        var idx = currentIdx;
+
+        var next = document.createElement("button");
+        next.className = "next-btn";
+
+        if (examMode) {
+            examOnPass();
+            var lastOne = exam.current >= exam.picks.length - 1;
+            next.textContent = lastOne ? "Завершить экзамен" : "Следующая задача →";
+            next.onclick = examNext;
+            box.appendChild(next);
+            return;
+        }
+
+        if (hasNext) {
+            next.textContent = "Следующее задание →";
+            next.onclick = function () { openTask(track, idx + 1); };
+            toast("Задание выполнено! 🎉", true, "Следующее задание →", function () { openTask(track, idx + 1); });
+        } else {
+            next.textContent = "🏆 Квест «" + q.title + "» пройден! Выбери другой в списке слева";
+            next.onclick = function () { showSidebar(); };
+            toast("🏆 Квест «" + q.title + "» пройден!", true);
+        }
+
+        box.appendChild(next);
+    }
+
+    window.addEventListener("message", function (e) {
+
+        if (e.source !== preview.contentWindow || !e.data) return;
+
+        if (e.data.phCheck) {
+            if (jsCheckHandler) jsCheckHandler(e.data.results);
+        } else if (e.data.phConsole) {
+            addConsole(e.data.type, e.data.text);
+        }
+
+    });
+
+
+    // ------------------------------------------------------------
+    //  HTML-сокращения (Emmet)
+    // ------------------------------------------------------------
+
+    // ===== EMMET START =====
+    // Собственная реализация Emmet: HTML (!, div.box>ul>li*3, a[href=#]{текст}, ...)
+    // и CSS (m10, df, w100p, bgc#f00, ...). Работает без внешних библиотек.
+
+    const EM_MARK = "\u0001";   // место, где остановится курсор (Tab-стоп)
+
+    const EM_INLINE = {
+        a: 1, abbr: 1, acronym: 1, b: 1, bdo: 1, big: 1, br: 1, button: 1, cite: 1, code: 1, dfn: 1, em: 1,
+        font: 1, i: 1, img: 1, input: 1, kbd: 1, label: 1, q: 1, s: 1, samp: 1, select: 1, small: 1, span: 1,
+        strike: 1, strong: 1, sub: 1, sup: 1, textarea: 1, tt: 1, u: 1, "var": 1
+    };
+
+    const EM_VOID = {
+        area: 1, base: 1, br: 1, col: 1, embed: 1, hr: 1, img: 1, input: 1, link: 1, meta: 1, param: 1,
+        source: 1, track: 1, wbr: 1
+    };
+
+    const EM_BOOL = {
+        disabled: 1, checked: 1, selected: 1, readonly: 1, required: 1, hidden: 1, multiple: 1,
+        autofocus: 1, autoplay: 1, controls: 1, loop: 1, muted: 1, defer: 1, async: 1, novalidate: 1, open: 1
+    };
+
+    const EM_IMPLICIT = {
+        ul: "li", ol: "li", menu: "li", table: "tr", tbody: "tr", thead: "tr", tfoot: "tr",
+        tr: "td", select: "option", optgroup: "option", p: "span"
+    };
+
+    const EM_ALIAS = {
+        bq: "blockquote", fig: "figure", figc: "figcaption", ifr: "iframe", btn: "button", sect: "section",
+        art: "article", hdr: "header", ftr: "footer", adr: "address", dlg: "dialog", str: "strong",
+        opt: "option", tarea: "textarea", sel: "select", cap: "caption", colg: "colgroup", det: "details",
+        fset: "fieldset", leg: "legend", prog: "progress", datal: "datalist"
+    };
+
+    const EM_KNOWN = {};
+    ("html head body title meta link style script div span p a img ul ol li h1 h2 h3 h4 h5 h6 table thead " +
+     "tbody tfoot tr td th form input button label select option textarea nav header footer main section " +
+     "article aside figure figcaption blockquote pre code em strong b i u small br hr iframe video audio " +
+     "source canvas svg details summary dialog fieldset legend dl dt dd caption col colgroup abbr cite q " +
+     "sub sup mark time address menu noscript template").split(" ").forEach(function (t) { EM_KNOWN[t] = 1; });
+
+    const EM_DEFAULT_ATTRS = {
+        a: [["href", ""]],
+        img: [["src", ""], ["alt", ""]],
+        link: [["rel", "stylesheet"], ["href", ""]],
+        form: [["action", ""]],
+        label: [["for", ""]],
+        input: [["type", "text"]],
+        textarea: [["name", ""], ["id", ""], ["cols", "30"], ["rows", "10"]],
+        select: [["name", ""], ["id", ""]],
+        iframe: [["src", ""], ["frameborder", "0"]],
+        base: [["href", ""]],
+        source: [["src", ""], ["type", ""]],
+        option: [["value", ""]]
+    };
+
+    const EM_VARIANTS = {
+        "a:link": { tag: "a", attrs: [["href", "http://"]] },
+        "a:mail": { tag: "a", attrs: [["href", "mailto:"]] },
+        "a:tel": { tag: "a", attrs: [["href", "tel:+"]] },
+        "link:css": { tag: "link", attrs: [["rel", "stylesheet"], ["href", "style.css"]] },
+        "link:favicon": { tag: "link", attrs: [["rel", "shortcut icon"], ["type", "image/x-icon"], ["href", "favicon.ico"]] },
+        "script:src": { tag: "script", attrs: [["src", ""]] },
+        "meta:vp": { tag: "meta", attrs: [["name", "viewport"], ["content", "width=device-width, initial-scale=1.0"]] },
+        "meta:utf": { tag: "meta", attrs: [["http-equiv", "Content-Type"], ["content", "text/html;charset=UTF-8"]] },
+        "form:post": { tag: "form", attrs: [["action", ""], ["method", "post"]] },
+        "form:get": { tag: "form", attrs: [["action", ""], ["method", "get"]] }
+    };
+
+    [
+        [["input:text", "input:t"], [["type", "text"], ["name", ""], ["id", ""]]],
+        [["input:password", "input:p"], [["type", "password"], ["name", ""], ["id", ""]]],
+        [["input:checkbox", "input:c"], [["type", "checkbox"], ["name", ""], ["id", ""]]],
+        [["input:radio", "input:r"], [["type", "radio"], ["name", ""], ["id", ""]]],
+        [["input:email"], [["type", "email"], ["name", ""], ["id", ""]]],
+        [["input:file", "input:f"], [["type", "file"], ["name", ""], ["id", ""]]],
+        [["input:hidden", "input:h"], [["type", "hidden"], ["name", ""]]],
+        [["input:submit", "input:s"], [["type", "submit"], ["value", ""]]],
+        [["input:button", "input:b"], [["type", "button"], ["value", ""]]]
+    ].forEach(function (row) {
+        row[0].forEach(function (key) { EM_VARIANTS[key] = { tag: "input", attrs: row[1] }; });
+    });
+
+    const EM_PLUS = {
+        "ul+": "ul>li", "ol+": "ol>li", "table+": "table>tr>td", "tr+": "tr>td",
+        "select+": "select>option", "dl+": "dl>dt+dd"
+    };
+
+    const EM_BOILERPLATE = [
+        "<!DOCTYPE html>",
+        '<html lang="ru">',
+        "<head>",
+        '    <meta charset="UTF-8">',
+        '    <meta name="viewport" content="width=device-width, initial-scale=1.0">',
+        "    <title>Document</title>",
+        "<\/head>",
+        "<body>",
+        "    " + EM_MARK,
+        "<\/body>",
+        "<\/html>"
+    ].join("\n");
+
+    const EM_LOREM = ("lorem ipsum dolor sit amet consectetur adipisicing elit obcaecati quibusdam voluptas nam vero " +
+        "atque eaque dolorum perferendis ratione illo officia laborum accusantium fugiat itaque magni minus quas " +
+        "tempora").split(" ");
+
+    function emIndent(level) {
+        var s = "";
+        for (var i = 0; i < level; i++) s += "    ";
+        return s;
+    }
+
+    function emLorem(n) {
+        var count = n > 0 ? n : 30;
+        var w = [];
+        for (var i = 0; i < count; i++) w.push(EM_LOREM[i % EM_LOREM.length]);
+        var s = w.join(" ");
+        return s.charAt(0).toUpperCase() + s.slice(1) + ".";
+    }
+
+    // ---------- разбор HTML-сокращения в дерево ----------
+
+    function emParse(src) {
+
+        var i = 0;
+        var n = src.length;
+
+        function fail() { throw new Error("emmet"); }
+
+        function readWhile(re) {
+            var s = "";
+            while (i < n && re.test(src.charAt(i))) { s += src.charAt(i); i++; }
+            return s;
+        }
+
+        function readText() {
+            var s = "";
+            while (i < n && src.charAt(i) !== "}") {
+                if (src.charAt(i) === "\\" && i + 1 < n) { s += src.charAt(i + 1); i += 2; }
+                else { s += src.charAt(i); i++; }
+            }
+            if (src.charAt(i) !== "}") fail();
+            i++;
+            return s;
+        }
+
+        function parseAttrs(node) {
+            while (true) {
+                readWhile(/\s/);
+                if (i >= n) fail();
+                if (src.charAt(i) === "]") { i++; return; }
+
+                var name = readWhile(/[\w:$@-]/);
+                if (!name) fail();
+
+                var value = null;
+
+                if (src.charAt(i) === "=") {
+                    i++;
+                    var q = src.charAt(i);
+                    if (q === '"' || q === "'") {
+                        i++;
+                        value = "";
+                        while (i < n && src.charAt(i) !== q) { value += src.charAt(i); i++; }
+                        if (src.charAt(i) !== q) fail();
+                        i++;
+                    } else {
+                        value = readWhile(/[^\s\]]/);
+                    }
+                }
+
+                node.attrs.push([name, value]);
+            }
+        }
+
+        function parseItem() {
+
+            var node;
+
+            if (src.charAt(i) === "(") {
+                i++;
+                var kids = parseSeq();
+                if (src.charAt(i) !== ")") fail();
+                i++;
+                node = { group: true, children: kids, repeat: 1 };
+            } else {
+
+                node = { name: "", id: null, classes: [], attrs: [], text: null, children: [], repeat: 1 };
+
+                var name = readWhile(/[A-Za-z0-9:$@_-]/);
+
+                if (name) {
+                    if (!/^[A-Za-z]/.test(name)) fail();
+                    var lm = name.match(/^lorem(\d*)$/i);
+                    if (lm) node.lorem = lm[1] ? parseInt(lm[1], 10) : 30;
+                    node.name = name;
+                } else if ("#.[{".indexOf(src.charAt(i)) === -1 || i >= n) {
+                    fail();
+                }
+
+                while (i < n) {
+                    var c = src.charAt(i);
+                    if (c === "#") {
+                        i++;
+                        node.id = readWhile(/[\w$@-]/);
+                        if (!node.id) fail();
+                    } else if (c === ".") {
+                        i++;
+                        var cl = readWhile(/[\w$@-]/);
+                        if (!cl) fail();
+                        node.classes.push(cl);
+                    } else if (c === "[") {
+                        i++;
+                        parseAttrs(node);
+                    } else if (c === "{") {
+                        i++;
+                        node.text = readText();
+                    } else {
+                        break;
+                    }
+                }
+            }
+
+            if (src.charAt(i) === "*") {
+                i++;
+                var d = readWhile(/\d/);
+                if (!d) fail();
+                node.repeat = parseInt(d, 10);
+                if (node.repeat < 1 || node.repeat > 100) fail();
+            }
+
+            return node;
+        }
+
+        function parseSeq() {
+
+            var root = { children: [] };
+            var cur = root;
+            var stack = [];
+
+            while (true) {
+
+                var node = parseItem();
+                cur.children.push(node);
+
+                var c = src.charAt(i);
+
+                if (c === "+") { i++; continue; }
+                if (c === ">") { i++; stack.push(cur); cur = node; continue; }
+                if (c === "^") {
+                    while (src.charAt(i) === "^") { i++; if (stack.length) cur = stack.pop(); }
+                    continue;
+                }
+
+                break;
+            }
+
+            return root.children;
+        }
+
+        var nodes = parseSeq();
+        if (i < n) fail();
+        return nodes;
+    }
+
+    // ---------- вывод дерева в HTML ----------
+
+    function emNum(str, counters) {
+
+        if (str === null || str.indexOf("$") === -1 || !counters.length) return str;
+
+        var c = counters[counters.length - 1];
+
+        return str.replace(/(\$+)(?:@(-)?(\d+)?)?/g, function (m, dollars, rev, base) {
+            var start = base ? parseInt(base, 10) : 1;
+            var v = rev ? start + c.n - c.i : start + c.i - 1;
+            var s = String(v);
+            while (s.length < dollars.length) s = "0" + s;
+            return s;
+        });
+    }
+
+    function emJoin(kids, pad) {
+
+        var out = "";
+
+        kids.forEach(function (k, idx) {
+            if (idx > 0) {
+                var prev = kids[idx - 1];
+                var together = prev.inline && k.inline && prev.s.indexOf("\n") === -1 && k.s.indexOf("\n") === -1;
+                out += together ? "" : "\n" + pad;
+            }
+            out += k.s;
+        });
+
+        return out;
+    }
+
+    function emRender(nodes, parent, level, counters) {
+
+        var out = [];
+
+        nodes.forEach(function (node) {
+            for (var k = 1; k <= node.repeat; k++) {
+
+                var ctx = node.repeat > 1 ? counters.concat([{ i: k, n: node.repeat }]) : counters;
+
+                if (node.group) {
+                    out = out.concat(emRender(node.children, parent, level, ctx));
+                } else {
+                    out.push(emElement(node, parent, level, ctx));
+                }
+            }
+        });
+
+        return out;
+    }
+
+    function emElement(node, parent, level, counters) {
+
+        if (node.lorem !== undefined) return { s: emLorem(node.lorem), inline: true };
+
+        var name = node.name;
+        var textStr = node.text !== null ? emNum(node.text, counters) : "";
+
+        if (!name) {
+            if (!node.id && !node.classes.length && !node.attrs.length) {
+                return { s: textStr, inline: true };
+            }
+            name = (parent && EM_IMPLICIT[parent]) || "div";
+        }
+
+        var tag = name;
+        var defaults = null;
+
+        if (EM_VARIANTS[name]) {
+            tag = EM_VARIANTS[name].tag;
+            defaults = EM_VARIANTS[name].attrs;
+        } else if (EM_ALIAS[name]) {
+            tag = EM_ALIAS[name];
+        }
+
+        var attrs = [];
+
+        function setAttr(key, value) {
+            for (var j = 0; j < attrs.length; j++) {
+                if (attrs[j][0] === key) { attrs[j][1] = value; return; }
+            }
+            attrs.push([key, value]);
+        }
+
+        (defaults || EM_DEFAULT_ATTRS[tag] || []).forEach(function (a) { attrs.push([a[0], a[1]]); });
+
+        if (node.id) setAttr("id", emNum(node.id, counters));
+
+        if (node.classes.length) {
+            setAttr("class", node.classes.map(function (c) { return emNum(c, counters); }).join(" "));
+        }
+
+        node.attrs.forEach(function (a) {
+            setAttr(a[0], a[1] === null ? null : emNum(a[1], counters));
+        });
+
+        var open = "<" + tag + attrs.map(function (a) {
+            if (a[1] === null) return " " + a[0] + (EM_BOOL[a[0]] ? "" : '="' + EM_MARK + '"');
+            return " " + a[0] + '="' + (a[1] === "" ? EM_MARK : a[1]) + '"';
+        }).join("") + ">";
+
+        var inline = !!EM_INLINE[tag];
+
+        if (EM_VOID[tag]) return { s: open, inline: inline };
+
+        var close = "</" + tag + ">";
+        var kids = node.children.length ? emRender(node.children, tag, level + 1, counters) : [];
+
+        if (!kids.length) {
+            return { s: open + (textStr || EM_MARK) + close, inline: inline };
+        }
+
+        // Один вложенный строчный элемент остаётся в одной строке (li>a, p>b),
+        // а если детей несколько — каждый ребёнок идёт с новой строки
+        var single = kids.length === 1 && kids[0].inline && kids[0].s.indexOf("\n") === -1;
+
+        if (single) {
+            return { s: open + textStr + kids[0].s + close, inline: inline };
+        }
+
+        var pad = emIndent(level + 1);
+        var inner = (textStr ? textStr + "\n" + pad : "") +
+            kids.map(function (k) { return k.s; }).join("\n" + pad);
+
+        return { s: open + "\n" + pad + inner + "\n" + emIndent(level) + close, inline: false };
+    }
+
+    function emIsKnown(name) {
+        return !!(EM_KNOWN[name] || EM_ALIAS[name] || EM_VARIANTS[name] || /^lorem\d*$/i.test(name));
+    }
+
+    function emHtml(abbr) {
+
+        if (abbr === "!" || abbr === "html:5") return EM_BOILERPLATE;
+        if (EM_PLUS[abbr]) abbr = EM_PLUS[abbr];
+
+        var nodes = emParse(abbr);
+
+        // обычное слово (hello) не должно превращаться в тег
+        if (nodes.length === 1) {
+            var x = nodes[0];
+            var plain = !x.group && x.name && !x.id && !x.classes.length && !x.attrs.length &&
+                x.text === null && x.repeat === 1 && !x.children.length;
+            if (plain && !emIsKnown(x.name)) return null;
+        }
+
+        return emJoin(emRender(nodes, null, 0, []), "");
+    }
+
+    // ---------- CSS-сокращения ----------
+
+    const EM_CSS_PROPS = {
+        m: "margin", mt: "margin-top", mr: "margin-right", mb: "margin-bottom", ml: "margin-left",
+        p: "padding", pt: "padding-top", pr: "padding-right", pb: "padding-bottom", pl: "padding-left",
+        w: "width", h: "height", maw: "max-width", mah: "max-height", miw: "min-width", mih: "min-height",
+        bg: "background", bgc: "background-color", bgi: "background-image", bgs: "background-size",
+        bgp: "background-position", c: "color", fz: "font-size", fw: "font-weight", ff: "font-family",
+        fs: "font-style", ta: "text-align", td: "text-decoration", tt: "text-transform", lh: "line-height",
+        ls: "letter-spacing", op: "opacity", z: "z-index", t: "top", r: "right", b: "bottom", l: "left",
+        bd: "border", bdt: "border-top", bdr: "border-right", bdb: "border-bottom", bdl: "border-left",
+        bdrs: "border-radius", bdc: "border-color", bdw: "border-width", bxsh: "box-shadow",
+        txsh: "text-shadow", ov: "overflow", ovx: "overflow-x", ovy: "overflow-y", cur: "cursor",
+        gap: "gap", fg: "flex-grow", flex: "flex", trs: "transition", trf: "transform", ani: "animation",
+        gtc: "grid-template-columns", gtr: "grid-template-rows", d: "display", pos: "position"
+    };
+
+    const EM_CSS_KEYWORDS = {
+        df: "display: flex", db: "display: block", dn: "display: none", dib: "display: inline-block",
+        di: "display: inline", dg: "display: grid",
+        jcc: "justify-content: center", jcsb: "justify-content: space-between",
+        jcsa: "justify-content: space-around", jcfs: "justify-content: flex-start",
+        jcfe: "justify-content: flex-end",
+        aic: "align-items: center", aifs: "align-items: flex-start", aife: "align-items: flex-end",
+        ais: "align-items: stretch",
+        fdc: "flex-direction: column", fdr: "flex-direction: row", fww: "flex-wrap: wrap",
+        posa: "position: absolute", posr: "position: relative", posf: "position: fixed",
+        poss: "position: sticky",
+        tac: "text-align: center", tal: "text-align: left", tar: "text-align: right",
+        fwb: "font-weight: bold", fsi: "font-style: italic", tdn: "text-decoration: none",
+        tdu: "text-decoration: underline", curp: "cursor: pointer", ovh: "overflow: hidden",
+        ova: "overflow: auto", bxzb: "box-sizing: border-box", ttu: "text-transform: uppercase"
+    };
+
+    const EM_CSS_UNITLESS = { z: 1, op: 1, fw: 1, lh: 1, fg: 1, flex: 1 };
+    const EM_UNIT_ALIAS = { p: "%", e: "em", r: "rem", x: "ex" };
+
+    function emCssValue(key, rest) {
+
+        if (rest.charAt(0) === "#") return /^#[0-9a-fA-F]{3,8}$/.test(rest) ? rest : null;
+
+        var neg = false;
+
+        if (rest.charAt(0) === "-") { neg = true; rest = rest.slice(1); }
+
+        var parts = rest.split("-");
+        var vals = [];
+
+        for (var i = 0; i < parts.length; i++) {
+
+            var t = parts[i];
+            if (t === "") return null;
+
+            var v;
+            var nm = t.match(/^([\d.]+)([a-z%]*)$/);
+
+            if (nm) {
+                var numStr = nm[1];
+                var unit = nm[2];
+
+                if (neg && i === 0) numStr = "-" + numStr;
+
+                if (unit === "") {
+                    if (EM_CSS_UNITLESS[key] || /^-?0$/.test(numStr)) unit = "";
+                    else unit = numStr.indexOf(".") > -1 ? "em" : "px";
+                } else if (EM_UNIT_ALIAS[unit]) {
+                    unit = EM_UNIT_ALIAS[unit];
+                }
+
+                v = numStr + unit;
+            } else if (t === "a") {
+                v = "auto";
+            } else if (/^[a-z]+$/.test(t)) {
+                v = t;
+            } else {
+                return null;
+            }
+
+            vals.push(v);
+        }
+
+        return vals.join(" ");
+    }
+
+    function emCssOne(abbr) {
+
+        var important = false;
+
+        if (/!$/.test(abbr)) { important = true; abbr = abbr.slice(0, -1); }
+
+        var out;
+
+        if (EM_CSS_KEYWORDS[abbr]) {
+            out = EM_CSS_KEYWORDS[abbr] + ";";
+        } else {
+            var m = abbr.match(/^([a-z]+)(.*)$/);
+            if (!m || !EM_CSS_PROPS[m[1]]) return null;
+
+            if (m[2] === "") {
+                out = EM_CSS_PROPS[m[1]] + ": " + EM_MARK + ";";
+            } else {
+                var value = emCssValue(m[1], m[2]);
+                if (value === null) return null;
+                out = EM_CSS_PROPS[m[1]] + ": " + value + ";";
+            }
+        }
+
+        if (important) out = out.replace(/;$/, " !important;");
+
+        return out;
+    }
+
+    function emCss(abbr) {
+
+        var pieces = abbr.split("+");
+        var out = [];
+
+        for (var i = 0; i < pieces.length; i++) {
+            var one = emCssOne(pieces[i]);
+            if (one === null) return null;
+            out.push(one);
+        }
+
+        return out.join("\n");
+    }
+
+    function emmetExpand(abbr, kind) {
+        try {
+            return kind === "css" ? emCss(abbr) : emHtml(abbr);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    // ---------- поиск сокращения перед курсором ----------
+
+    function emExtractHtml(before) {
+
+        var brace = 0;
+        var bracket = 0;
+        var paren = 0;
+        var i = before.length;
+
+        while (i > 0) {
+
+            var c = before.charAt(i - 1);
+
+            if (c === "}") brace++;
+            else if (c === "{") { if (brace === 0) break; brace--; }
+            else if (c === "]") bracket++;
+            else if (c === "[") { if (bracket === 0) break; bracket--; }
+            else if (c === ")") paren++;
+            else if (c === "(") { if (paren === 0) break; paren--; }
+            else if (brace === 0 && bracket === 0) {
+                if (/\s/.test(c)) break;
+                if (c === "<" || c === '"' || c === "'" || c === "`" || c === "=" || c === ";") break;
+                if (c === ">" && /<\/?[A-Za-z][^<>]*$/.test(before.slice(0, i - 1))) break;
+            }
+
+            i--;
+        }
+
+        return before.slice(i);
+    }
+
+    function emExtractCss(before) {
+        var m = before.match(/[\w#.%!@+-]+$/);
+        return m ? m[0] : "";
+    }
+
+    function emmetContext(model, position, kind) {
+
+        var line = model.getLineContent(position.lineNumber).slice(0, position.column - 1);
+        var abbr = kind === "css" ? emExtractCss(line) : emExtractHtml(line);
+
+        if (!abbr) return null;
+
+        var offset = model.getOffsetAt(position);
+        var before = model.getValue().slice(0, offset - abbr.length);
+
+        if (kind === "css") {
+            if (before.lastIndexOf("{") <= before.lastIndexOf("}")) return null;
+            if (/[:,(]\s*$/.test(before)) return null;
+        } else if (before.lastIndexOf("<") > before.lastIndexOf(">")) {
+            return null;
+        }
+
+        var exp = emmetExpand(abbr, kind);
+        if (exp === null) return null;
+
+        return {
+            abbr: abbr,
+            exp: exp,
+            line: position.lineNumber,
+            startColumn: position.column - abbr.length,
+            endColumn: position.column
+        };
+    }
+
+    // ---------- вставка в редактор ----------
+
+    function emToSnippet(text) {
+
+        var parts = text.split(EM_MARK);
+        var out = "";
+
+        for (var k = 0; k < parts.length; k++) {
+            out += parts[k].replace(/[\\$}]/g, "\\$&");
+            if (k < parts.length - 1) out += k === parts.length - 2 ? "$0" : "$" + (k + 1);
+        }
+
+        return out;
+    }
+
+    function emPreview(text) {
+        return text.split(EM_MARK).join("|");
+    }
+
+    function emmetProvider(kind, triggers) {
+        return {
+            triggerCharacters: triggers,
+            provideCompletionItems: function (model, position) {
+
+                var ctx = emmetContext(model, position, kind);
+                if (!ctx) return { suggestions: [] };
+
+                return {
+                    incomplete: true,
+                    suggestions: [{
+                        label: ctx.abbr,
+                        kind: monaco.languages.CompletionItemKind.Snippet,
+                        detail: "Emmet Abbreviation",
+                        documentation: { value: "```" + kind + "\n" + emPreview(ctx.exp) + "\n```" },
+                        insertText: emToSnippet(ctx.exp),
+                        insertTextRules: monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
+                        range: {
+                            startLineNumber: ctx.line,
+                            endLineNumber: ctx.line,
+                            startColumn: ctx.startColumn,
+                            endColumn: ctx.endColumn
+                        },
+                        filterText: ctx.abbr,
+                        sortText: "0",
+                        preselect: true
+                    }]
+                };
+            }
+        };
+    }
+
+    function emmetInsert(ctx) {
+
+        var model = editor.getModel();
+        var range = new monaco.Range(ctx.line, ctx.startColumn, ctx.line, ctx.endColumn);
+
+        // Основной путь: вставка как сниппета, Tab переходит между полями
+        try {
+            var snippets = editor.getContribution("snippetController2");
+            editor.setSelection(range);
+            snippets.insert(emToSnippet(ctx.exp));
+            return;
+        } catch (e) { /* запасной путь ниже */ }
+
+        // Запасной путь: обычная вставка с отступами текущей строки
+        var indent = model.getLineContent(ctx.line).match(/^\s*/)[0];
+
+        var withMarks = ctx.exp.split("\n").map(function (l, idx) { return idx ? indent + l : l; }).join("\n");
+        var cursorIdx = withMarks.indexOf(EM_MARK);
+        var plain = withMarks.split(EM_MARK).join("");
+        var startOffset = model.getOffsetAt({ lineNumber: ctx.line, column: ctx.startColumn });
+
+        editor.executeEdits("emmet", [{ range: range, text: plain }]);
+        editor.setPosition(model.getPositionAt(startOffset + (cursorIdx === -1 ? plain.length : cursorIdx)));
+    }
+    // ===== EMMET END =====
+
+
+    // ------------------------------------------------------------
+    //  Горячие клавиши вне редактора
+    // ------------------------------------------------------------
+
+    document.addEventListener("keydown", function (e) {
+
+        if (!(e.ctrlKey || e.metaKey)) return;
+
+        var key = e.key.toLowerCase();
+
+        if (key === "s") { e.preventDefault(); saveAll(); }
+        else if (key === "enter") { e.preventDefault(); runCode(); }
+        else if (key === "b") { e.preventDefault(); toggleSidebar(); }
+
+    });
+
+    document.addEventListener("click", closeMenu);
+
+
+    // ------------------------------------------------------------
+    //  Интерфейс, не зависящий от Monaco
+    // ------------------------------------------------------------
+
+    buildMenus();
+    initResizers();
+    renderTabs();
+    renderFiles();
+    renderQuests();
+    updateStatus();
+    updateStatsBar();
+    $("sbStats").onclick = function () { window.location.href = "lessons.html"; };
+
+    $("actExplorer").onclick = toggleSidebar;
+
+    $("actQuests").onclick = function () {
+        showSidebar();
+        $("questSection").hidden = false;
+        $("chevQuests").textContent = "▾";
+        $("headQuests").scrollIntoView({ block: "start" });
+    };
+
+    $("actRun").onclick = runCode;
+    $("btnRun").onclick = runCode;
+    $("btnRefresh").onclick = runCode;
+    $("btnCheck").onclick = checkTask;
+    $("exSkip").onclick = function () { examNext(); };
+    $("exFinish").onclick = function () { if (examMode && confirm("Завершить экзамен сейчас?")) finishExam(false); };
+    $("btnShare").onclick = shareLink;
+
+    $("actSettings").onclick = function (e) {
+        e.stopPropagation();
+        openMenu($("actSettings"), settingsItems(), "right");
+    };
+
+    $("headFiles").onclick = function () {
+        var box = $("fileList");
+        box.hidden = !box.hidden;
+        $("chevFiles").textContent = box.hidden ? "▸" : "▾";
+    };
+
+    $("headQuests").onclick = function () {
+        var box = $("questSection");
+        box.hidden = !box.hidden;
+        $("chevQuests").textContent = box.hidden ? "▸" : "▾";
+    };
+
+    $("tbHead").onclick = function () {
+        var b = $("taskBanner");
+        b.classList.toggle("collapsed");
+        $("tbChev").textContent = b.classList.contains("collapsed") ? "▸" : "▾";
+    };
+
+    $("tbHintBtn").onclick = function (e) { e.stopPropagation(); toggleHint(); };
+    $("tbResetBtn").onclick = function (e) { e.stopPropagation(); resetTask(); };
+    $("tbBugBtn").onclick = function (e) { e.stopPropagation(); reportBug(); };
+
+    $("pt_problems").onclick = function () { setPanelTab("problems"); };
+    $("pt_check").onclick = function () { setPanelTab("check"); };
+    $("pt_console").onclick = function () { setPanelTab("console"); };
+    $("btnClearConsole").onclick = clearConsole;
+    $("btnClosePanel").onclick = function () { showPanel(false); };
+
+    $("sbQuests").onclick = $("actQuests").onclick;
+    $("sbProblems").onclick = function () { showPanel(true); setPanelTab("problems"); };
+    $("sbAuto").onclick = toggleAutorun;
+
+    if (window.innerWidth <= 800) {
+        $("sidebar").hidden = true;
+        $("rzSidebar").hidden = true;
+        $("actExplorer").classList.remove("active");
+    }
+
+
+    // ------------------------------------------------------------
+    //  Подключение Monaco Editor
+    // ------------------------------------------------------------
+
+    const MONACO_BASE = "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.2/min";
+
+    window.MonacoEnvironment = {
+        getWorkerUrl: function () {
+            const code =
+                "self.MonacoEnvironment = { baseUrl: '" + MONACO_BASE + "/' };" +
+                "importScripts('" + MONACO_BASE + "/vs/base/worker/workerMain.js');";
+            return "data:text/javascript;charset=utf-8," + encodeURIComponent(code);
+        }
+    };
+
+    require.config({
+        paths: { vs: MONACO_BASE + "/vs" }
+    });
+
+    require(["vs/editor/editor.main"], function () {
+
+        models.html = monaco.editor.createModel("", "html");
+        models.css = monaco.editor.createModel("", "css");
+        models.javascript = monaco.editor.createModel("", "javascript");
+
+        editor = monaco.editor.create(
+            $("editor"),
+            {
+                model: models.html,
+                theme: settings.theme === "light" ? "vs" : "vs-dark",
+                automaticLayout: true,
+                fontSize: settings.fontSize,
+                fontFamily: "Consolas, 'Courier New', monospace",
+                minimap: { enabled: false },
+                tabSize: 4,
+                wordWrap: settings.wrap ? "on" : "off",
+                scrollBeyondLastLine: false,
+                renderWhitespace: "selection",
+                bracketPairColorization: { enabled: true },
+                smoothScrolling: true,
+                cursorBlinking: "smooth",
+                padding: { top: 8 },
+                quickSuggestions: { other: true, comments: false, strings: true },
+                suggest: { showWords: false, snippetsPreventQuickSuggestions: false },
+                snippetSuggestions: "top",
+                tabCompletion: "on",
+                acceptSuggestionOnEnter: "on",
+                suggestSelection: "first"
+            }
+        );
+
+        try {
+            monaco.languages.typescript.javascriptDefaults.setDiagnosticsOptions({
+                noSemanticValidation: true,
+                noSyntaxValidation: false
+            });
+        } catch (err) { /* настройка недоступна в этой версии */ }
+
+        Object.keys(models).forEach(function (k) {
+            models[k].onDidChangeContent(function () {
+                scheduleRun();
+                scheduleSaveFree();
+            });
+        });
+
+        editor.onDidChangeCursorPosition(function (e) {
+            $("sbPos").textContent = "Стр " + e.position.lineNumber + ", стлб " + e.position.column;
+        });
+
+        monaco.editor.onDidChangeMarkers(refreshProblems);
+
+
+        // Emmet: подсказки и раскрытие по Tab / Enter, как в VS Code
+        monaco.languages.registerCompletionItemProvider(
+            "html",
+            emmetProvider("html", ["!", ".", "#", ">", "+", "*", "^", "(", ")", "[", "]", "{", "}", "$", "@", ":", "-", "=", "/"])
+        );
+
+        monaco.languages.registerCompletionItemProvider(
+            "css",
+            emmetProvider("css", ["#", ".", "%", "!", "-", "+"])
+        );
+
+        // Tab без списка подсказок: раскрываем сокращение перед курсором,
+        // а если сокращения нет, Tab работает как обычный отступ
+        editor.addCommand(
+            monaco.KeyCode.Tab,
+            function () {
+
+                var sel = editor.getSelection();
+
+                if ((activeFile === "html" || activeFile === "css") && !(sel && !sel.isEmpty())) {
+                    var ctx = emmetContext(editor.getModel(), editor.getPosition(), activeFile);
+                    if (ctx) {
+                        emmetInsert(ctx);
+                        return;
+                    }
+                }
+
+                editor.trigger("keyboard", "tab", null);
+
+            },
+            "!suggestWidgetVisible && !inSnippetMode && !editorHasSelection"
+        );
+
+
+        // Горячие клавиши и команды в палитре (F1)
+        editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, saveAll);
+        editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, runCode);
+        editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyB, toggleSidebar);
+        editor.addCommand(
+            monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyP,
+            function () { editor.trigger("keyboard", "editor.action.quickCommand", null); }
+        );
+
+        editor.addAction({ id: "ph.run", label: "Programer Help: Запустить код", run: runCode });
+        editor.addAction({ id: "ph.check", label: "Programer Help: Проверить задание", run: checkTask });
+        editor.addAction({ id: "ph.hint", label: "Programer Help: Показать подсказку", run: toggleHint });
+        editor.addAction({ id: "ph.theme", label: "Programer Help: Сменить тему", run: toggleTheme });
+
+
+        // Что открыть при загрузке страницы
+        // (старые ссылки ?lesson=1/2/3 тоже работают)
+        let track = params.get("track");
+        let taskNumber = parseInt(params.get("task") || "1", 10);
+        const lesson = params.get("lesson");
+
+        if (lesson === "1") { track = "html"; taskNumber = 1; }
+        if (lesson === "2") { track = "css"; taskNumber = 1; }
+        if (lesson === "3") { track = "js"; taskNumber = 1; }
+
+        if (params.get("exam")) {
+            openFree(false);
+            startExam();
+        } else if (params.get("daily")) {
+            openDaily();
+        } else if (params.get("code")) {
+            openShared(params.get("code"), params.get("tab"));
+        } else if (track && QUESTS[track]) {
+            openTask(track, Math.max(0, taskNumber - 1));
+        } else {
+            openFree(false);
+        }
+
+        refreshProblems();
+
+    });
+
+</script>
+
+
+<script src="translations.js"></script>
+</body>
+</html>

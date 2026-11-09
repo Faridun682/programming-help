@@ -1,0 +1,215 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <script src="theme.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Уроки программирования</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+
+        header {
+            background-color: white;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 1px 4px #ddd;
+        }
+
+        header a {
+            text-decoration: none;
+            color: #2563eb;
+        }
+
+        .lessons {
+            max-width: 1100px;
+            margin: 50px auto;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .lessons h1 {
+            font-size: 36px;
+            margin-bottom: 15px;
+        }
+
+        .lessons p {
+            color: #64748b;
+            margin-bottom: 35px;
+        }
+
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .card {
+            background-color: white;
+            padding: 30px 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px #00000010;
+        }
+
+        .card h2 {
+            color: #2563eb;
+            margin-bottom: 15px;
+        }
+
+        .card p {
+            line-height: 1.6;
+        }
+
+        .card a {
+            display: inline-block;
+            background-color: #2563eb;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 7px;
+            text-decoration: none;
+        }
+
+        .card a:hover {
+            background-color: #1d4ed8;
+        }
+
+        @media (max-width: 700px) {
+            .cards {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <a href="index.html">← Вернуться на главную</a>
+    </header>
+
+    <section class="lessons">
+        <h1>Уроки программирования</h1>
+        <p>Изучай веб-разработку с нуля вместе с Programer Help!</p>
+
+        <div id="ph-profile"></div>
+        <div class="cards">
+
+            <div class="card">
+                <h2>HTML</h2>
+                <p>Изучи основы HTML и научись создавать структуру сайтов.</p>
+                <a href="html-lesson-1.html">Начать обучение</a>            </div>
+
+            <div class="card">
+                <h2>CSS</h2>
+                <p>Научись оформлять сайты, добавлять цвета и создавать дизайн.</p>
+                <a href="css-lesson-1.html">Начать обучение</a>            </div>
+
+            <div class="card">
+                <h2>JavaScript</h2>
+                <p>Добавляй интерактивность и функциональность на свои сайты.</p>
+                <a href="js-lesson-1.html">Начать обучение</a>            </div>
+
+        </div>
+    </section>
+
+    <script>
+(function () {
+    // сколько заданий в каждом квесте (если добавишь задания, поменяй числа)
+    var TOTALS = { html: 5, css: 5, js: 5, algo: 8, func: 8 };
+
+    var progress = {};
+    try { progress = JSON.parse(localStorage.getItem("ph_progress") || "{}") || {}; } catch (e) {}
+
+    function done(key) {
+        return Math.min(Array.isArray(progress[key]) ? progress[key].length : 0, TOTALS[key]);
+    }
+
+    function addBar(card, key) {
+        var d = done(key);
+        var total = TOTALS[key];
+
+        var wrap = document.createElement("div");
+        wrap.style.cssText = "margin:0 0 18px";
+
+        var label = document.createElement("div");
+        label.style.cssText = "font-size:13px;color:#64748b;margin-bottom:6px";
+        label.innerHTML = d === total ? "<span>✅ Пройдено: </span>" + d + "<span> из </span>" + total : "<span>Выполнено: </span>" + d + "<span> из </span>" + total;
+
+        var bar = document.createElement("div");
+        bar.style.cssText = "height:8px;background:#e2e8f0;border-radius:5px;overflow:hidden";
+
+        var fill = document.createElement("div");
+        fill.style.cssText = "height:100%;background:#22c55e;width:" + Math.round(d / total * 100) + "%";
+
+        bar.appendChild(fill);
+        wrap.appendChild(label);
+        wrap.appendChild(bar);
+
+        card.insertBefore(wrap, card.querySelector("a"));
+    }
+
+    var box = document.querySelector(".cards");
+    if (!box) return;
+
+    var byTitle = { "HTML": "html", "CSS": "css", "JavaScript": "js" };
+
+    box.querySelectorAll(".card").forEach(function (card) {
+        var h = card.querySelector("h2");
+        var key = h && byTitle[h.textContent.trim()];
+        if (key) addBar(card, key);
+    });
+
+    // две новые карточки: задачи и функции
+    [
+        { key: "algo", title: "Задачи 🧮", text: "Олимпиадные задачи на условия: напиши функцию, а сайт проверит её по тестам.", href: "code.html?track=algo&task=1", btn: "Решать задачи" },
+        { key: "func", title: "Функции 🔧", text: "Учись писать свои функции: от квадрата числа до чисел Фибоначчи.", href: "code.html?track=func&task=1", btn: "Начать" }
+    ].forEach(function (c) {
+        var card = document.createElement("div");
+        card.className = "card";
+
+        var h2 = document.createElement("h2");
+        h2.textContent = c.title;
+
+        var p = document.createElement("p");
+        p.textContent = c.text;
+
+        var a = document.createElement("a");
+        a.href = c.href;
+        a.textContent = c.btn;
+
+        card.appendChild(h2);
+        card.appendChild(p);
+        card.appendChild(a);
+        box.appendChild(card);
+
+        addBar(card, c.key);
+    });
+
+    // общий итог под заголовком
+    var total = 0, sum = 0;
+    Object.keys(TOTALS).forEach(function (k) { total += TOTALS[k]; sum += done(k); });
+
+    var line = document.createElement("div");
+    line.style.cssText = "margin:-15px 0 30px;font-weight:bold;color:#2563eb";
+    line.innerHTML = "<span>Всего выполнено: </span>" + sum + "<span> из </span>" + total;
+    box.parentNode.insertBefore(line, box);
+})();
+</script>
+
+<script src="stats.js"></script>
+
+
+<script src="translations.js"></script>
+</body>
+</html>

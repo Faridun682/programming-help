@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <script src="theme.js"></script>
+    <script src="lesson.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Урок 1 — Основы JavaScript | Programer Help</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+            line-height: 1.7;
+        }
+
+        header {
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0 1px 4px #ddd;
+        }
+
+        header a {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 35px;
+            margin-bottom: 15px;
+        }
+
+        h2 {
+            margin: 30px 0 10px;
+            color: #2563eb;
+        }
+
+        p {
+            margin-bottom: 12px;
+        }
+
+        .example {
+            background-color: #0f172a;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+
+        .example pre {
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .info {
+            background-color: #dbeafe;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .task {
+            background-color: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-top: 30px;
+            box-shadow: 0 2px 10px #00000010;
+        }
+
+        .task h3 {
+            margin-bottom: 10px;
+        }
+
+        .editor-button {
+            display: inline-block;
+            background-color: #2563eb;
+            color: white;
+            padding: 12px 22px;
+            border-radius: 7px;
+            text-decoration: none;
+            margin-top: 15px;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .editor-button:hover {
+            background-color: #1d4ed8;
+            transform: translateY(-2px);
+        }
+
+        .next-lesson {
+            display: inline-block;
+            margin-top: 35px;
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 27px;
+            }
+
+            .container {
+                margin: 20px auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <a href="lessons.html">← Назад к урокам</a>
+    </header>
+
+    <div class="container">
+
+        <h1>Урок 1. Что такое JavaScript?</h1>
+
+        <p>
+            JavaScript — это язык программирования, который делает сайты
+            живыми: кнопки реагируют на нажатия, текст меняется,
+            появляются меню, игры и анимации.
+        </p>
+
+        <div class="info">
+            <strong>Запомни:</strong>
+            HTML создаёт структуру сайта,
+            CSS отвечает за дизайн,
+            а JavaScript — за интерактивность.
+            Именно JavaScript заставляет страницу «думать» и отвечать на действия человека.
+        </div>
+
+        <h2>1. Переменные</h2>
+
+        <p>
+            Переменная — это коробка с названием, в которой хранится значение.
+            Её создают словом <strong>let</strong> или <strong>const</strong>:
+        </p>
+
+        <div class="example"><pre>let age = 12;
+const name = "Али";</pre></div>
+
+        <p>
+            <strong>let</strong> — значение потом можно менять.<br>
+            <strong>const</strong> — значение менять нельзя.
+        </p>
+
+        <h2>2. Типы данных</h2>
+
+        <p>
+            <strong>Строка</strong> — текст в кавычках: <strong>"Привет"</strong>.<br>
+            <strong>Число</strong> — например, <strong>25</strong> или <strong>3.14</strong>.<br>
+            <strong>Логическое значение</strong> — <strong>true</strong> (правда) или <strong>false</strong> (ложь).
+        </p>
+
+        <div class="example"><pre>let text = "Привет, мир!";
+let count = 5;
+let isStudent = true;</pre></div>
+
+        <h2>3. Вывод в консоль</h2>
+
+        <p>
+            Команда <strong>console.log()</strong> выводит значение в консоль браузера.
+            Её удобно использовать, чтобы проверять, что делает код.
+            Консоль открывается клавишей <strong>F12</strong>.
+        </p>
+
+        <div class="example"><pre>console.log("Привет, мир!");
+console.log(2 + 3);</pre></div>
+
+        <h2>4. Условия</h2>
+
+        <p>
+            Условие позволяет программе принимать решения:
+            если что-то верно, выполняется один код, иначе — другой.
+        </p>
+
+        <div class="example"><pre>let age = 12;
+
+if (age >= 18) {
+    console.log("Ты взрослый");
+} else {
+    console.log("Ты ещё школьник");
+}</pre></div>
+
+        <h2>5. Функции</h2>
+
+        <p>
+            Функция — это набор команд с названием.
+            Один раз её описываешь, а потом вызываешь сколько угодно раз.
+        </p>
+
+        <div class="example"><pre>function sayHello(name) {
+    console.log("Привет, " + name + "!");
+}
+
+sayHello("Али");
+sayHello("Мария");</pre></div>
+
+        <h2>6. Работа со страницей</h2>
+
+        <p>
+            Самое интересное — JavaScript умеет менять содержимое страницы.
+            Сначала мы находим элемент по его <strong>id</strong>,
+            а потом реагируем на клик по нему:
+        </p>
+
+        <div class="example"><pre>&lt;h1 id="title"&gt;Привет!&lt;/h1&gt;
+&lt;button id="btn"&gt;Нажми&lt;/button&gt;
+
+const title = document.getElementById("title");
+const button = document.getElementById("btn");
+
+button.addEventListener("click", function () {
+    title.textContent = "Ты нажал на кнопку!";
+});</pre></div>
+
+        <p>
+            <strong>getElementById</strong> — найти элемент по id.<br>
+            <strong>addEventListener</strong> — «слушать» событие, например клик.<br>
+            <strong>textContent</strong> — текст элемента, который можно изменить.
+        </p>
+
+        <h2>Проверь себя</h2>
+
+        <div id="ph-quiz" data-quiz="js1"></div>
+
+        <h2>7. Попробуй самостоятельно!</h2>
+
+        <div class="task">
+
+            <h3>Твоё первое задание</h3>
+
+            <p>
+                В редакторе уже есть заголовок и кнопка.
+                Напиши код так, чтобы при клике на кнопку
+                текст заголовка менялся на «Я изучаю JavaScript!».
+            </p>
+
+            <p>
+                Пиши код на вкладке JavaScript в нашем онлайн-редакторе,
+                нажми «Запустить» и проверь результат!
+            </p>
+
+            <a href="code.html?lesson=3" class="editor-button">
+                Открыть онлайн-редактор →
+            </a>
+
+        </div>
+
+        <a href="lessons.html" class="next-lesson">
+            ← Вернуться ко всем урокам
+        </a>
+
+    </div>
+
+<script src="stats.js"></script>
+<script src="quiz.js"></script>
+
+
+<script src="translations.js"></script>
+</body>
+</html>

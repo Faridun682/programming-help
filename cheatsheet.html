@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Шпаргалка | Programer Help</title>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body { font-family: Arial, sans-serif; background-color: #f8fafc; color: #0f172a; line-height: 1.6; }
+
+        header { background: #fff; padding: 20px; box-shadow: 0 1px 4px #ddd; }
+        header a { color: #2563eb; text-decoration: none; font-weight: bold; }
+
+        .container { max-width: 1100px; margin: 30px auto; padding: 0 16px 50px; }
+
+        h1 { font-size: 34px; margin-bottom: 6px; }
+        .sub { color: #64748b; margin-bottom: 20px; }
+
+        .bar { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+
+        #search {
+            flex: 1;
+            min-width: 220px;
+            padding: 12px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        .tabs button {
+            background: #e2e8f0;
+            color: #0f172a;
+            border: 0;
+            border-radius: 8px;
+            padding: 11px 18px;
+            font-size: 15px;
+            cursor: pointer;
+        }
+
+        .tabs button.active { background: #2563eb; color: #fff; }
+
+        #count { color: #64748b; font-size: 14px; margin-bottom: 14px; }
+
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+
+        .item { background: #fff; border-radius: 10px; padding: 18px; box-shadow: 0 2px 10px #00000010; min-width: 0; }
+
+        .item .top { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+        .item .name { font-family: Consolas, monospace; font-weight: bold; color: #2563eb; font-size: 17px; }
+        .item .lang { font-size: 11px; background: #e2e8f0; padding: 2px 8px; border-radius: 10px; color: #475569; }
+        .item .desc { margin: 6px 0 10px; color: #334155; }
+
+        .item pre {
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 14px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .btns { display: flex; gap: 8px; margin-top: 10px; }
+
+        .btns button, .btns a {
+            background: #e2e8f0;
+            color: #0f172a;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 6px 12px;
+            font: 13px Arial, sans-serif;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .btns a { background: #2563eb; border-color: #2563eb; color: #fff; font-weight: bold; }
+
+        .empty { background: #fff; padding: 30px; border-radius: 10px; text-align: center; color: #64748b; }
+
+        @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } h1 { font-size: 26px; } }
+    </style>
+</head>
+
+<body>
+
+<header><a href="lessons.html">← К урокам</a></header>
+
+<div class="container">
+    <h1>📚 Шпаргалка</h1>
+    <p class="sub">Теги, свойства и команды в одном месте. Нажми «Попробовать», чтобы запустить пример в редакторе.</p>
+
+    <div class="bar">
+        <input id="search" type="search" placeholder="Поиск: например, список, цвет, функция…" autocomplete="off">
+        <div class="tabs" id="tabs"></div>
+    </div>
+
+    <div id="count"></div>
+    <div class="grid" id="grid"></div>
+</div>
+
+<script>
+(function () {
+
+    function L() { return Array.prototype.join.call(arguments, "\n"); }
+
+    var DEF_HTML_FOR_CSS = L(
+        '<h1>Заголовок</h1>',
+        '<p>Обычный абзац текста.</p>',
+        '<p class="important">Важный текст</p>',
+        '<div class="box">',
+        '    <h2>Карточка</h2>',
+        '    <p>Текст внутри блока.</p>',
+        '</div>',
+        '<button class="btn">Кнопка</button>'
+    );
+
+    var DEF_HTML_FOR_JS = L(
+        '<h1 id="title">Привет!</h1>',
+        '<p id="out"></p>',
+        '<button id="btn">Нажми на меня</button>'
+    );
+
+    var ITEMS = [
+
+        // ---------- HTML ----------
+        { lang: "html", name: "h1 … h6", desc: "Заголовки: от самого важного (h1) до самого мелкого (h6).", code: L('<h1>Главный заголовок</h1>', '<h2>Подзаголовок</h2>', '<h3>Заголовок поменьше</h3>') },
+        { lang: "html", name: "p", desc: "Абзац текста.", code: '<p>Это абзац текста.</p>' },
+        { lang: "html", name: "a", desc: "Ссылка. Атрибут href — адрес, куда она ведёт.", code: '<a href="https://google.com">Перейти в Google</a>' },
+        { lang: "html", name: "img", desc: "Картинка. src — адрес картинки, alt — её описание.", code: '<img src="https://picsum.photos/300/150" alt="Случайная картинка">' },
+        { lang: "html", name: "ul, li", desc: "Маркированный список. Каждый пункт — тег li.", code: L('<ul>', '    <li>Футбол</li>', '    <li>Музыка</li>', '    <li>Игры</li>', '</ul>') },
+        { lang: "html", name: "ol, li", desc: "Нумерованный список.", code: L('<ol>', '    <li>Открыть редактор</li>', '    <li>Написать код</li>', '    <li>Нажать «Запустить»</li>', '</ol>') },
+        { lang: "html", name: "div", desc: "Блок-контейнер: группирует другие элементы.", code: L('<div class="box">', '    <h2>Карточка</h2>', '    <p>Текст внутри блока.</p>', '</div>') },
+        { lang: "html", name: "span", desc: "Строчный контейнер внутри текста.", code: '<p>Меня зовут <span class="name">Али</span>.</p>' },
+        { lang: "html", name: "strong, em", desc: "Жирный и курсивный текст.", code: '<p>Это <strong>важно</strong>, а это <em>выделено курсивом</em>.</p>' },
+        { lang: "html", name: "br, hr", desc: "Перенос строки и горизонтальная линия.", code: L('<p>Первая строка<br>Вторая строка</p>', '<hr>', '<p>Текст после линии</p>') },
+        { lang: "html", name: "button", desc: "Кнопка.", code: '<button>Нажми меня</button>' },
+        { lang: "html", name: "input", desc: "Поле ввода. Тип задаёт атрибут type: text, password, email, checkbox…", code: L('<input type="text" placeholder="Введи имя">', '<input type="password" placeholder="Пароль">') },
+        { lang: "html", name: "label", desc: "Подпись к полю ввода. Атрибут for связывает её с полем по id.", code: L('<label for="age">Возраст:</label>', '<input id="age" type="number">') },
+        { lang: "html", name: "textarea", desc: "Многострочное поле для длинного текста.", code: '<textarea rows="4" cols="30" placeholder="Напиши сообщение"></textarea>' },
+        { lang: "html", name: "select, option", desc: "Выпадающий список.", code: L('<select>', '    <option>HTML</option>', '    <option>CSS</option>', '    <option>JavaScript</option>', '</select>') },
+        { lang: "html", name: "form", desc: "Форма: объединяет поля ввода и кнопку отправки.", code: L('<form>', '    <input type="text" placeholder="Имя">', '    <button>Отправить</button>', '</form>') },
+        { lang: "html", name: "table", desc: "Таблица: tr — строка, th — заголовок столбца, td — ячейка.", code: L('<table border="1">', '    <tr>', '        <th>Имя</th>', '        <th>Возраст</th>', '    </tr>', '    <tr>', '        <td>Али</td>', '        <td>12</td>', '    </tr>', '</table>') },
+        { lang: "html", name: "header, nav, main, footer", desc: "Смысловые части страницы: шапка, меню, главное содержимое и подвал.", code: L('<header><h1>Мой сайт</h1></header>', '<nav><a href="#">Главная</a> <a href="#">Контакты</a><a href="ai.html" class="nav-link">Programer AI</a></nav>', '<main><p>Главное содержимое</p></main>', '<footer>Все права защищены</footer>') },
+        { lang: "html", name: "iframe", desc: "Встроенная страница, например карта или видео.", code: '<iframe src="https://example.com" width="320" height="160"></iframe>' },
+        { lang: "html", name: "комментарий", desc: "Заметка в коде. На странице её не видно.", code: L('<!-- Это комментарий -->', '<p>Этот текст виден на странице.</p>') },
+
+        // ---------- CSS ----------
+        { lang: "css", name: "color", desc: "Цвет текста.", code: L('h1 {', '    color: blue;', '}') },
+        { lang: "css", name: "background-color", desc: "Цвет фона.", code: L('.box {', '    background-color: #dbeafe;', '}') },
+        { lang: "css", name: "font-size", desc: "Размер шрифта.", code: L('p {', '    font-size: 22px;', '}') },
+        { lang: "css", name: "font-family", desc: "Шрифт.", code: L('body {', '    font-family: Georgia, serif;', '}') },
+        { lang: "css", name: "font-weight", desc: "Толщина шрифта: normal или bold.", code: L('.important {', '    font-weight: bold;', '}') },
+        { lang: "css", name: "text-align", desc: "Выравнивание текста: left, center, right.", code: L('h1 {', '    text-align: center;', '}') },
+        { lang: "css", name: "text-decoration", desc: "Подчёркивание: underline или none.", code: L('h1 {', '    text-decoration: underline;', '}') },
+        { lang: "css", name: "line-height", desc: "Высота строки (межстрочный интервал).", code: L('p {', '    line-height: 2;', '}') },
+        { lang: "css", name: "margin", desc: "Внешний отступ вокруг элемента.", code: L('.box {', '    margin: 20px;', '}') },
+        { lang: "css", name: "padding", desc: "Внутренний отступ между границей и содержимым.", code: L('.box {', '    padding: 20px;', '    background-color: #eff6ff;', '}') },
+        { lang: "css", name: "border", desc: "Рамка: толщина, стиль и цвет.", code: L('.box {', '    border: 2px solid #2563eb;', '}') },
+        { lang: "css", name: "border-radius", desc: "Скругление углов.", code: L('.box {', '    border: 2px solid #2563eb;', '    border-radius: 15px;', '    padding: 15px;', '}') },
+        { lang: "css", name: "width, height", desc: "Ширина и высота элемента.", code: L('.box {', '    width: 250px;', '    height: 120px;', '    background-color: #dbeafe;', '}') },
+        { lang: "css", name: "display: flex", desc: "Раскладывает элементы в ряд (flexbox).", code: L('.box {', '    display: flex;', '    gap: 20px;', '}') },
+        { lang: "css", name: "justify-content", desc: "Расположение элементов по горизонтали внутри flex-контейнера.", code: L('.box {', '    display: flex;', '    justify-content: space-between;', '}') },
+        { lang: "css", name: "align-items", desc: "Расположение элементов по вертикали внутри flex-контейнера.", code: L('.box {', '    display: flex;', '    align-items: center;', '    height: 150px;', '    background-color: #eff6ff;', '}') },
+        { lang: "css", name: "gap", desc: "Расстояние между элементами во flex и grid.", code: L('.box {', '    display: flex;', '    gap: 40px;', '}') },
+        { lang: "css", name: "position", desc: "Сдвиг элемента относительно его обычного места.", code: L('.btn {', '    position: relative;', '    top: 10px;', '    left: 20px;', '}') },
+        { lang: "css", name: "box-shadow", desc: "Тень у блока.", code: L('.box {', '    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);', '    padding: 15px;', '}') },
+        { lang: "css", name: "opacity", desc: "Прозрачность от 0 (невидимо) до 1 (полностью видно).", code: L('h1 {', '    opacity: 0.4;', '}') },
+        { lang: "css", name: ":hover", desc: "Стиль при наведении мыши.", code: L('.btn:hover {', '    background-color: #2563eb;', '    color: white;', '}') },
+        { lang: "css", name: "transition", desc: "Плавное изменение стиля.", code: L('.btn {', '    transition: 0.3s;', '}', '', '.btn:hover {', '    background-color: #2563eb;', '    color: white;', '    transform: scale(1.1);', '}') },
+        { lang: "css", name: "cursor", desc: "Вид курсора над элементом.", code: L('.btn {', '    cursor: pointer;', '}') },
+        { lang: "css", name: "overflow", desc: "Что делать с содержимым, которое не помещается.", code: L('.box {', '    width: 150px;', '    height: 60px;', '    overflow: auto;', '    border: 1px solid #999;', '}') },
+        { lang: "css", name: "@media", desc: "Стили только для определённых экранов, например телефонов.", code: L('@media (max-width: 600px) {', '    h1 {', '        font-size: 20px;', '    }', '}') },
+
+        // ---------- JavaScript ----------
+        { lang: "javascript", name: "let, const", desc: "Переменные: let можно менять, const — нельзя.", code: L('let age = 12;', 'const name = "Али";', 'age = 13;', 'console.log(name, age);') },
+        { lang: "javascript", name: "типы данных", desc: "Строка, число и логическое значение.", code: L('console.log(typeof "текст");', 'console.log(typeof 42);', 'console.log(typeof true);') },
+        { lang: "javascript", name: "строки и шаблоны", desc: "Склеивание строк плюсом и шаблонная строка в обратных кавычках.", code: L('const name = "Али";', 'console.log("Привет, " + name + "!");', 'console.log(`Привет, ${name}!`);') },
+        { lang: "javascript", name: "арифметика", desc: "Сложение, вычитание, умножение, деление и остаток.", code: L('console.log(10 + 5);', 'console.log(10 - 5);', 'console.log(10 * 5);', 'console.log(10 / 5);', 'console.log(10 % 3);') },
+        { lang: "javascript", name: "if / else", desc: "Условие: выполняется один код или другой.", code: L('let age = 12;', '', 'if (age >= 18) {', '    console.log("Взрослый");', '} else {', '    console.log("Школьник");', '}') },
+        { lang: "javascript", name: "=== && ||", desc: "Сравнение и логика: равно, не равно, «и», «или».", code: L('console.log(5 === 5);', 'console.log(5 === "5");', 'console.log(5 !== 3);', 'console.log(5 > 3 && 2 < 1);', 'console.log(5 > 3 || 2 < 1);') },
+        { lang: "javascript", name: "for", desc: "Цикл с известным числом повторов.", code: L('for (let i = 1; i <= 5; i++) {', '    console.log("Шаг " + i);', '}') },
+        { lang: "javascript", name: "while", desc: "Цикл, который работает, пока условие верно.", code: L('let n = 3;', '', 'while (n > 0) {', '    console.log(n);', '    n = n - 1;', '}', 'console.log("Старт!");') },
+        { lang: "javascript", name: "function", desc: "Функция: описываешь один раз, вызываешь сколько угодно.", code: L('function square(n) {', '    return n * n;', '}', '', 'console.log(square(5));', 'console.log(square(12));') },
+        { lang: "javascript", name: "стрелочная функция", desc: "Короткая запись функции.", code: L('const double = (n) => n * 2;', '', 'console.log(double(4));', 'console.log(double(21));') },
+        { lang: "javascript", name: "массив", desc: "Список значений. Нумерация начинается с нуля.", code: L('const fruits = ["яблоко", "банан"];', 'fruits.push("манго");', '', 'console.log(fruits[0]);', 'console.log(fruits.length);') },
+        { lang: "javascript", name: "forEach", desc: "Перебор всех элементов массива.", code: L('const names = ["Али", "Мария", "Саид"];', '', 'names.forEach(function (name) {', '    console.log("Привет, " + name);', '});') },
+        { lang: "javascript", name: "map, filter", desc: "Преобразовать массив или отобрать нужные элементы.", code: L('const nums = [1, 2, 3, 4, 5];', '', 'console.log(nums.map(n => n * 10));', 'console.log(nums.filter(n => n % 2 === 0));') },
+        { lang: "javascript", name: "объект", desc: "Набор свойств: ключ и значение.", code: L('const user = {', '    name: "Али",', '    age: 12', '};', '', 'console.log(user.name);', 'user.age = 13;', 'console.log(user);') },
+        { lang: "javascript", name: "getElementById", desc: "Найти элемент и изменить его текст.", code: L('const out = document.getElementById("out");', 'out.textContent = "Текст изменён из JavaScript!";') },
+        { lang: "javascript", name: "addEventListener", desc: "Реакция на клик по кнопке.", code: L('const title = document.getElementById("title");', 'const btn = document.getElementById("btn");', '', 'btn.addEventListener("click", function () {', '    title.textContent = "Ты нажал на кнопку!";', '});') },
+        { lang: "javascript", name: "style", desc: "Изменить стиль элемента из кода.", code: L('const title = document.getElementById("title");', 'title.style.color = "red";', 'title.style.fontSize = "48px";') },
+        { lang: "javascript", name: "setTimeout", desc: "Выполнить код через заданное время (в миллисекундах).", code: L('console.log("Начало");', '', 'setTimeout(function () {', '    console.log("Прошла 1 секунда");', '}, 1000);') },
+        { lang: "javascript", name: "Math.random, Math.round", desc: "Случайное число и округление.", code: L('const dice = Math.floor(Math.random() * 6) + 1;', 'console.log("Выпало: " + dice);', 'console.log(Math.round(4.6));') },
+        { lang: "javascript", name: "Number, parseInt", desc: "Превратить строку в число.", code: L('console.log(Number("42") + 1);', 'console.log(parseInt("15px"));') }
+    ];
+
+    var LANG_NAMES = { html: "HTML", css: "CSS", javascript: "JavaScript" };
+
+    var state = { tab: "all", query: "" };
+
+    function encode(obj) {
+        var bytes = new TextEncoder().encode(JSON.stringify(obj));
+        var bin = "";
+        for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+        return encodeURIComponent(btoa(bin));
+    }
+
+    function tryLink(item) {
+        var project;
+        if (item.lang === "html") project = { h: item.code, c: "", j: "" };
+        else if (item.lang === "css") project = { h: DEF_HTML_FOR_CSS, c: item.code, j: "" };
+        else project = { h: DEF_HTML_FOR_JS, c: "", j: item.code };
+        return "code.html?code=" + encode(project) + "&tab=" + item.lang;
+    }
+
+    function copy(text, done) {
+        function fallback() {
+            var ta = document.createElement("textarea");
+            ta.value = text;
+            ta.style.cssText = "position:fixed;opacity:0";
+            document.body.appendChild(ta);
+            ta.select();
+            var ok = false;
+            try { ok = document.execCommand("copy"); } catch (e) {}
+            ta.remove();
+            done(ok);
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(function () { done(true); }, fallback);
+        } else {
+            fallback();
+        }
+    }
+
+    function render() {
+
+        var q = state.query.trim().toLowerCase();
+
+        var list = ITEMS.filter(function (it) {
+            if (state.tab !== "all" && it.lang !== state.tab) return false;
+            if (!q) return true;
+            return (it.name + " " + it.desc + " " + it.code).toLowerCase().indexOf(q) > -1;
+        });
+
+        document.getElementById("count").textContent = "Найдено: " + list.length;
+
+        var grid = document.getElementById("grid");
+        grid.innerHTML = "";
+
+        if (!list.length) {
+            var empty = document.createElement("div");
+            empty.className = "empty";
+            empty.style.gridColumn = "1 / -1";
+            empty.textContent = "Ничего не найдено. Попробуй другое слово.";
+            grid.appendChild(empty);
+            return;
+        }
+
+        list.forEach(function (it) {
+
+            var box = document.createElement("div");
+            box.className = "item";
+
+            var top = document.createElement("div");
+            top.className = "top";
+
+            var name = document.createElement("span");
+            name.className = "name";
+            name.textContent = it.name;
+
+            var lang = document.createElement("span");
+            lang.className = "lang";
+            lang.textContent = LANG_NAMES[it.lang];
+
+            top.appendChild(name);
+            top.appendChild(lang);
+
+            var desc = document.createElement("div");
+            desc.className = "desc";
+            desc.textContent = it.desc;
+
+            var pre = document.createElement("pre");
+            pre.textContent = it.code;
+
+            var btns = document.createElement("div");
+            btns.className = "btns";
+
+            var copyBtn = document.createElement("button");
+            copyBtn.type = "button";
+            copyBtn.textContent = "Копировать";
+            copyBtn.onclick = function () {
+                copy(it.code, function (ok) {
+                    copyBtn.textContent = ok ? "Скопировано ✓" : "Не удалось";
+                    setTimeout(function () { copyBtn.textContent = "Копировать"; }, 1500);
+                });
+            };
+
+            var tryBtn = document.createElement("a");
+            tryBtn.textContent = "▶ Попробовать";
+            tryBtn.href = tryLink(it);
+
+            btns.appendChild(copyBtn);
+            btns.appendChild(tryBtn);
+
+            box.appendChild(top);
+            box.appendChild(desc);
+            box.appendChild(pre);
+            box.appendChild(btns);
+            grid.appendChild(box);
+        });
+    }
+
+    var tabs = document.getElementById("tabs");
+
+    [["all", "Все"], ["html", "HTML"], ["css", "CSS"], ["javascript", "JavaScript"]].forEach(function (t) {
+        var b = document.createElement("button");
+        b.type = "button";
+        b.textContent = t[1];
+        b.setAttribute("data-tab", t[0]);
+        if (t[0] === state.tab) b.className = "active";
+        b.onclick = function () {
+            state.tab = t[0];
+            tabs.querySelectorAll("button").forEach(function (x) { x.className = x === b ? "active" : ""; });
+            render();
+        };
+        tabs.appendChild(b);
+    });
+
+    document.getElementById("search").addEventListener("input", function (e) {
+        state.query = e.target.value;
+        render();
+    });
+
+    render();
+})();
+</script>
+
+
+<script src="translations.js"></script>
+</body>
+</html>

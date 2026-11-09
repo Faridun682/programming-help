@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Сертификат | Programer Help</title>
+
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+
+        header { background: #fff; padding: 20px; box-shadow: 0 1px 4px #ddd; }
+        header a { color: #2563eb; text-decoration: none; font-weight: bold; }
+
+        .wrap { max-width: 1000px; margin: 30px auto; padding: 0 16px; }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: center;
+            background: #fff;
+            padding: 16px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px #00000010;
+            margin-bottom: 24px;
+        }
+
+        .controls label { font-weight: bold; }
+
+        .controls input {
+            padding: 10px 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 7px;
+            font-size: 16px;
+            min-width: 240px;
+        }
+
+        .controls button {
+            background: #2563eb;
+            color: #fff;
+            border: 0;
+            border-radius: 7px;
+            padding: 11px 20px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .msg {
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            line-height: 1.7;
+            box-shadow: 0 2px 10px #00000010;
+        }
+
+        .msg a { color: #2563eb; font-weight: bold; }
+
+        .cert {
+            background: #fffdf5;
+            border: 14px double #c9a227;
+            padding: 50px 40px;
+            text-align: center;
+            box-shadow: 0 6px 24px #00000022;
+        }
+
+        .cert .brand { letter-spacing: 4px; color: #2563eb; font-weight: bold; font-size: 15px; }
+        .cert h1 { font-size: 52px; letter-spacing: 6px; color: #7c5e00; margin: 14px 0 10px; font-family: Georgia, serif; }
+        .cert .small { color: #64748b; font-size: 17px; }
+        .cert .name { font-size: 42px; font-weight: bold; margin: 22px 0; font-family: Georgia, serif; border-bottom: 2px solid #c9a227; display: inline-block; padding: 0 30px 6px; min-width: 300px; }
+        .cert .what { font-size: 19px; line-height: 1.7; max-width: 700px; margin: 0 auto; }
+        .cert .what b { color: #2563eb; }
+        .foot { display: flex; justify-content: space-between; margin-top: 44px; color: #475569; font-size: 15px; }
+        .foot div { min-width: 180px; }
+        .seal { font-size: 54px; margin-top: 18px; }
+
+        @page { size: A4 landscape; margin: 0; }
+
+        @media print {
+            body { background: #fff; }
+            .no-print { display: none !important; }
+            .wrap { margin: 0; max-width: none; padding: 0; }
+            .cert { box-shadow: none; min-height: 100vh; display: flex; flex-direction: column; justify-content: center; }
+        }
+
+        @media (max-width: 600px) {
+            .cert { padding: 30px 16px; border-width: 8px; }
+            .cert h1 { font-size: 32px; letter-spacing: 3px; }
+            .cert .name { font-size: 28px; min-width: 0; }
+            .foot { flex-direction: column; gap: 10px; align-items: center; }
+        }
+    </style>
+</head>
+
+<body>
+
+<header class="no-print">
+    <a href="lessons.html">← К урокам</a>
+</header>
+
+<div class="wrap">
+
+    <div class="controls no-print" id="controls" hidden>
+        <label for="name">Твоё имя:</label>
+        <input id="name" maxlength="40" placeholder="Например, Али Валиев">
+        <button id="print" type="button">🖨 Сохранить как PDF / печать</button>
+    </div>
+
+    <div class="msg" id="msg" hidden></div>
+
+    <div class="cert" id="cert" hidden>
+        <div class="brand">PROGRAMER HELP</div>
+        <h1>СЕРТИФИКАТ</h1>
+        <div class="small">подтверждает, что</div>
+        <div class="name" id="certName">Ученик Programer Help</div>
+        <div class="what" id="certText"></div>
+        <div class="seal">🎓</div>
+        <div class="foot">
+            <div>Дата: <b id="certDate"></b></div>
+            <div>№ <b id="certId"></b></div>
+        </div>
+    </div>
+
+</div>
+
+<script>
+(function () {
+
+    var TRACKS = {
+        html: { title: "HTML", total: 5, what: "основы HTML: заголовки, списки, ссылки, картинки, формы и структуру страницы" },
+        css: { title: "CSS", total: 5, what: "основы CSS: цвета, отступы, рамки, классы и оформление кнопок" },
+        js: { title: "JavaScript", total: 5, what: "основы JavaScript: переменные, функции, условия и работу со страницей" },
+        algo: { title: "Задачи", total: 8, what: "олимпиадные задачи на условия: ветвления, сравнения и работу с числами" },
+        func: { title: "Функции", total: 8, what: "написание функций: параметры, return и циклы" },
+        proj: { title: "Проекты", total: 8, what: "создание мини-сайтов: сайта-визитки и списка дел на HTML, CSS и JavaScript" }
+    };
+
+    var params = new URLSearchParams(location.search);
+    var key = params.get("track");
+    var track = TRACKS[key];
+
+    var progress = {};
+    try { progress = JSON.parse(localStorage.getItem("ph_progress") || "{}") || {}; } catch (e) {}
+
+    var msg = document.getElementById("msg");
+
+    function show(text, html) {
+        msg.hidden = false;
+        if (html) msg.innerHTML = text; else msg.textContent = text;
+    }
+
+    if (!track) {
+        show('Не выбран квест. <a href="lessons.html">Вернуться к урокам</a>.', true);
+        return;
+    }
+
+    var done = Array.isArray(progress[key]) ? Math.min(progress[key].length, track.total) : 0;
+
+    if (done < track.total) {
+        show('Сертификат по квесту «' + track.title + '» пока недоступен: выполнено ' + done + ' из ' + track.total +
+            ' заданий.<br><a href="code.html?track=' + key + '&task=1">Продолжить обучение →</a>', true);
+        return;
+    }
+
+    document.getElementById("controls").hidden = false;
+    document.getElementById("cert").hidden = false;
+
+    var nameInput = document.getElementById("name");
+    var certName = document.getElementById("certName");
+
+    var saved = "";
+    try { saved = localStorage.getItem("ph_name") || ""; } catch (e) {}
+    nameInput.value = saved;
+
+    function hash(str) {
+        var h = 0;
+        for (var i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) % 1000000;
+        return String(h);
+    }
+
+    function refresh() {
+        var n = nameInput.value.trim();
+        certName.textContent = n || "Ученик Programer Help";
+        try { localStorage.setItem("ph_name", n); } catch (e) {}
+        document.getElementById("certId").textContent =
+            "PH-" + key.toUpperCase() + "-" + ("000000" + hash(n + key)).slice(-6);
+    }
+
+    nameInput.addEventListener("input", refresh);
+
+    document.getElementById("certText").innerHTML =
+        "успешно прошёл(ла) квест <b>«" + track.title + "»</b> на платформе Programer Help, выполнив все " +
+        track.total + " заданий, и освоил(а) " + track.what + ".";
+
+    document.getElementById("certDate").textContent =
+        new Date().toLocaleDateString("ru-RU", { day: "numeric", month: "long", year: "numeric" });
+
+    document.getElementById("print").onclick = function () { window.print(); };
+
+    refresh();
+})();
+</script>
+
+
+<script src="translations.js"></script>
+</body>
+</html>

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <script src="theme.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Помощь - My Web Site</title>
+    <link rel="icon" type="image/png" href="./image.png">
+    <link rel="preconnect" href="https://googleapis.com">
+    <link rel="preconnect" href="https://gstatic.com" crossorigin>
+    <link href="https://googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #0f172a; display: flex; flex-direction: column; min-height: 100vh; }
+        .site-header { display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 2rem; background-color: #ffffff; box-shadow: 0 1px 3px rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; }
+        .logo-area { display: flex; align-items: center; gap: 12px; }
+        .logo-img { width: 40px; height: 40px; object-fit: cover; border-radius: 8px; background-color: #e2e8f0; }
+        .site-title { font-size: 1.25rem; font-weight: 700; color: #1e293b; letter-spacing: -0.02em; }
+        .nav-menu { display: flex; gap: 24px; }
+        .nav-link { text-decoration: none; color: #64748b; font-size: 0.95rem; font-weight: 500; transition: color 0.2s ease; position: relative; padding: 4px 0; }
+        .nav-link:hover, .nav-link.active { color: #2563eb; }
+        .nav-link.active::after { content: ''; position: absolute; bottom: 0; left: 0; width: 100%; height: 2px; background-color: #2563eb; border-radius: 2px; }
+        .content-section { max-width: 800px; margin: 4rem auto; padding: 0 2rem; flex: 1; width: 100%; }
+        .help-title { font-size: 2.5rem; font-weight: 700; color: #0f172a; margin-bottom: 0.5rem; letter-spacing: -0.03em; }
+        .help-subtitle { font-size: 1.125rem; color: #64748b; margin-bottom: 3rem; }
+        .faq-container { display: flex; flex-direction: column; gap: 16px; }
+        .faq-item { background-color: #ffffff; padding: 1.5rem; border-radius: 12px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); transition: all 0.2s ease; border: 1px solid #e2e8f0; }
+        .faq-item:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05); border-color: #2563eb; }
+        .faq-question { font-size: 1.25rem; font-weight: 600; color: #1e293b; margin-bottom: 0.75rem; }
+        .faq-answer { font-size: 1rem; color: #475569; line-height: 1.6; }
+        .site-footer { background-color: #ffffff; padding: 1.5rem 2rem; text-align: center; color: #64748b; font-size: 0.9rem; border-top: 1px solid #e2e8f0; margin-top: auto; }
+        @media (max-width: 640px) {
+            .site-header { flex-direction: column; gap: 16px; padding: 1rem; text-align: center; }
+             .logo-area { flex-direction: column; gap: 8px; }
+            .nav-menu { gap: 16px; flex-wrap: wrap; justify-content: center; }
+        }
+    </style>
+</head>
+<body>
+    <header class="site-header">
+        <div class="logo-area">
+            <img class="logo-img" src="./image.png" alt="Logo">
+            <h1 class="site-title">My Web site</h1>
+        </div>
+           <nav class="nav-menu">
+         <a href="index.html" class="nav-link">Главная</a>
+         <a href="lessons.html" class="nav-link">Уроки</a>
+         <a href="about.html" class="nav-link">О сайте</a>
+         <a href="help.html" class="nav-link active">Помощь</a>
+         <a href="contacts.html" class="nav-link">Контакты</a>
+          <a href="ai.html" class="nav-link">Programer AI</a></nav>
+    </header>
+    <main class="content-section">
+        <h2 class="help-title">Часто задаваемые вопросы</h2>
+        <p class="help-subtitle">Найдите ответы на самые популярные вопросы о работе нашего сервиса.</p>
+        <div class="faq-container">
+            <div class="faq-item">
+                <h3 class="faq-question">Как начать работу с вашими инструментами?</h3>
+                <p class="faq-answer">Для старта вам достаточно перейти на Главную страницу, выбрать интересующий вас раздел и нажать кнопку «Узнать больше».</p>
+            </div>
+            <div class="faq-item">
+                <h3 class="faq-question">Являются ли материалы бесплатными?</h3>
+                <p class="faq-answer">Да, все базовые руководства, статьи и примеры кода на нашем сайте находятся в открытом доступе для всех пользователей.</p>
+            </div>
+            <div class="faq-item">
+                <h3 class="faq-question">Как с вами связаться при возникновении проблем?</h3>
+                <p class="faq-answer">Вы можете перейти в раздел «Контакты» и воспользоваться формой обратной связи либо написать нам на электронную почту.</p>
+            </div>
+        </div>
+    </main>
+    <footer class="site-footer">
+        <p>&copy; 2026 My Web Site. Все права защищены.</p>
+    </footer>
+
+<script src="translations.js"></script>
+</body>
+</html>

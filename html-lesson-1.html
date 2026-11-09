@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <script src="theme.js"></script>
+    <script src="lesson.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Урок 1 — Основы HTML | Programer Help</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+            line-height: 1.7;
+        }
+
+        header {
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0 1px 4px #ddd;
+        }
+
+        header a {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 35px;
+            margin-bottom: 15px;
+        }
+
+        h2 {
+            margin: 30px 0 10px;
+            color: #2563eb;
+        }
+
+        p {
+            margin-bottom: 12px;
+        }
+
+        .example {
+            background-color: #0f172a;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+
+        .info {
+            background-color: #dbeafe;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .task {
+            background-color: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-top: 30px;
+            box-shadow: 0 2px 10px #00000010;
+        }
+
+        .editor-button {
+            display: inline-block;
+            background-color: #2563eb;
+            color: white;
+            padding: 12px 22px;
+            border-radius: 7px;
+            text-decoration: none;
+            margin-top: 15px;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .editor-button:hover {
+            background-color: #1d4ed8;
+            transform: translateY(-2px);
+        }
+
+        .next-lesson {
+            display: inline-block;
+            margin-top: 35px;
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 27px;
+            }
+
+            .container {
+                margin: 20px auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <a href="lessons.html">← Назад к урокам</a>
+    </header>
+
+    <div class="container">
+
+        <h1>Урок 1. Что такое HTML?</h1>
+
+        <p>
+            HTML — это язык разметки, который используется
+            для создания структуры веб-страниц.
+        </p>
+
+        <div class="info">
+            <strong>Запомни:</strong>
+            HTML создаёт структуру сайта,
+            CSS отвечает за дизайн,
+            а JavaScript — за интерактивность.
+        </div>
+
+        <h2>1. Основные HTML-теги</h2>
+
+        <p>
+            Теги помогают браузеру понимать содержимое страницы.
+        </p>
+
+        <div class="example">
+            &lt;h1&gt;Привет!&lt;/h1&gt;<br>
+            &lt;p&gt;Это мой первый сайт.&lt;/p&gt;
+        </div>
+
+        <p>
+            <strong>h1</strong> — заголовок.<br>
+            <strong>p</strong> — обычный текст, то есть абзац.
+        </p>
+
+        <h2>2. Структура HTML-документа</h2>
+
+        <p>
+            Каждая HTML-страница обычно начинается
+            с такой структуры:
+        </p>
+
+        <div class="example">
+            &lt;!DOCTYPE html&gt;<br>
+            &lt;html lang="ru"&gt;<br>
+            &nbsp;&nbsp;&lt;head&gt;<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&lt;meta charset="UTF-8"&gt;<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&lt;title&gt;Мой сайт&lt;/title&gt;<br>
+            &nbsp;&nbsp;&lt;/head&gt;<br>
+            &nbsp;&nbsp;&lt;body&gt;<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&lt;h1&gt;Привет!&lt;/h1&gt;<br>
+            &nbsp;&nbsp;&lt;/body&gt;<br>
+            &lt;/html&gt;
+        </div>
+
+        <h2>3. Для чего нужны основные теги?</h2>
+
+        <p>
+            <strong>&lt;html&gt;</strong> — начало HTML-документа.
+        </p>
+
+        <p>
+            <strong>&lt;head&gt;</strong> — информация о странице.
+        </p>
+
+        <p>
+            <strong>&lt;title&gt;</strong> — название страницы во вкладке браузера.
+        </p>
+
+        <p>
+            <strong>&lt;body&gt;</strong> — основное содержимое страницы.
+        </p>
+
+        <p>
+            <strong>&lt;h1&gt;</strong> — главный заголовок.
+        </p>
+
+        <p>
+            <strong>&lt;p&gt;</strong> — абзац текста.
+        </p>
+
+        <h2>Проверь себя</h2>
+
+        <div id="ph-quiz" data-quiz="html1"></div>
+
+        <h2>4. Попробуй самостоятельно!</h2>
+
+        <div class="task">
+
+            <h3>Твоё первое задание</h3>
+
+            <p>
+                Создай заголовок с текстом
+                «Я изучаю HTML».
+            </p>
+
+            <p>
+                Затем добавь абзац:
+                «Это мой первый урок программирования».
+            </p>
+
+            <p>
+                Напиши код самостоятельно в нашем онлайн-редакторе
+                и посмотри результат!
+            </p>
+
+            <a href="code.html?lesson=1" class="editor-button">
+                Открыть онлайн-редактор →
+            </a>
+
+        </div>
+
+        <a href="lessons.html" class="next-lesson">
+            ← Вернуться ко всем урокам
+        </a>
+
+    </div>
+
+<script src="stats.js"></script>
+<script src="quiz.js"></script>
+
+
+<script src="translations.js"></script>
+</body>
+</html>

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <script src="theme.js"></script>
+    <script src="lesson.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Урок 1 — Основы CSS | Programer Help</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+            line-height: 1.7;
+        }
+
+        header {
+            background-color: white;
+            padding: 20px;
+            box-shadow: 0 1px 4px #ddd;
+        }
+
+        header a {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            padding: 20px;
+        }
+
+        h1 {
+            font-size: 35px;
+            margin-bottom: 15px;
+        }
+
+        h2 {
+            margin: 30px 0 10px;
+            color: #2563eb;
+        }
+
+        p {
+            margin-bottom: 12px;
+        }
+
+        .example {
+            background-color: #0f172a;
+            color: #e2e8f0;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+
+        .example pre {
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+
+        .info {
+            background-color: #dbeafe;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .task {
+            background-color: white;
+            padding: 25px;
+            border-radius: 10px;
+            margin-top: 30px;
+            box-shadow: 0 2px 10px #00000010;
+        }
+
+        .task h3 {
+            margin-bottom: 10px;
+        }
+
+        .editor-button {
+            display: inline-block;
+            background-color: #2563eb;
+            color: white;
+            padding: 12px 22px;
+            border-radius: 7px;
+            text-decoration: none;
+            margin-top: 15px;
+            font-weight: bold;
+            transition: 0.2s;
+        }
+
+        .editor-button:hover {
+            background-color: #1d4ed8;
+            transform: translateY(-2px);
+        }
+
+        .next-lesson {
+            display: inline-block;
+            margin-top: 35px;
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 27px;
+            }
+
+            .container {
+                margin: 20px auto;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <a href="lessons.html">← Назад к урокам</a>
+    </header>
+
+    <div class="container">
+
+        <h1>Урок 1. Что такое CSS?</h1>
+
+        <p>
+            CSS — это язык стилей, который отвечает за внешний вид
+            веб-страниц: цвета, шрифты, отступы, размеры и расположение элементов.
+        </p>
+
+        <div class="info">
+            <strong>Запомни:</strong>
+            HTML создаёт структуру сайта,
+            CSS отвечает за дизайн,
+            а JavaScript — за интерактивность.
+            Без CSS любая страница выглядит как простой чёрный текст на белом фоне.
+        </div>
+
+        <h2>1. Как выглядит CSS-правило</h2>
+
+        <p>
+            CSS состоит из правил. Каждое правило говорит браузеру:
+            «найди вот такие элементы и оформи их вот так».
+        </p>
+
+        <div class="example"><pre>h1 {
+    color: blue;
+    font-size: 40px;
+}</pre></div>
+
+        <p>
+            <strong>h1</strong> — селектор: он указывает, к какому элементу применить стиль.<br>
+            <strong>color</strong> — свойство: что именно мы меняем.<br>
+            <strong>blue</strong> — значение: каким это должно стать.
+        </p>
+
+        <p>
+            Свойство и значение записываются через двоеточие,
+            а в конце строки ставится точка с запятой.
+            Все свойства правила находятся внутри фигурных скобок.
+        </p>
+
+        <h2>2. Как подключить CSS к странице</h2>
+
+        <p>
+            Самый простой способ — написать стили внутри тега
+            <strong>&lt;style&gt;</strong> в разделе <strong>&lt;head&gt;</strong>:
+        </p>
+
+        <div class="example"><pre>&lt;head&gt;
+    &lt;style&gt;
+        h1 {
+            color: blue;
+        }
+    &lt;/style&gt;
+&lt;/head&gt;</pre></div>
+
+        <p>
+            Когда сайт растёт, стили выносят в отдельный файл
+            и подключают его так:
+        </p>
+
+        <div class="example"><pre>&lt;link rel="stylesheet" href="style.css"&gt;</pre></div>
+
+        <h2>3. Основные свойства</h2>
+
+        <p>
+            <strong>color</strong> — цвет текста.<br>
+            <strong>background-color</strong> — цвет фона.<br>
+            <strong>font-size</strong> — размер шрифта.<br>
+            <strong>font-family</strong> — шрифт.<br>
+            <strong>text-align</strong> — выравнивание текста (left, center, right).
+        </p>
+
+        <div class="example"><pre>p {
+    color: #475569;
+    background-color: #f1f5f9;
+    font-size: 20px;
+    font-family: Arial, sans-serif;
+    text-align: center;
+}</pre></div>
+
+        <p>
+            Цвет можно писать по-разному: словом (<strong>red</strong>),
+            кодом (<strong>#2563eb</strong>) или функцией
+            (<strong>rgb(37, 99, 235)</strong>).
+        </p>
+
+        <h2>4. Отступы и рамки</h2>
+
+        <p>
+            У каждого элемента есть внутренний отступ <strong>padding</strong>
+            (расстояние от текста до края блока), внешний отступ <strong>margin</strong>
+            (расстояние до соседних элементов) и рамка <strong>border</strong>.
+        </p>
+
+        <div class="example"><pre>.box {
+    padding: 20px;
+    margin: 15px;
+    border: 2px solid #2563eb;
+    border-radius: 10px;
+}</pre></div>
+
+        <p>
+            Свойство <strong>border-radius</strong> скругляет углы блока.
+        </p>
+
+        <h2>5. Классы</h2>
+
+        <p>
+            Чтобы оформить не все элементы одного вида, а только некоторые,
+            им дают класс. В HTML он пишется в атрибуте <strong>class</strong>,
+            а в CSS перед названием ставится точка:
+        </p>
+
+        <div class="example"><pre>&lt;p class="important"&gt;Это важный текст&lt;/p&gt;
+
+.important {
+    color: red;
+    font-weight: bold;
+}</pre></div>
+
+        <h2>Проверь себя</h2>
+
+        <div id="ph-quiz" data-quiz="css1"></div>
+
+        <h2>6. Попробуй самостоятельно!</h2>
+
+        <div class="task">
+
+            <h3>Твоё первое задание</h3>
+
+            <p>
+                Сделай заголовок <strong>h1</strong> синим цветом.
+            </p>
+
+            <p>
+                Затем для абзаца <strong>p</strong> задай серый цвет
+                и размер шрифта 20px.
+            </p>
+
+            <p>
+                Перейди на вкладку CSS в нашем онлайн-редакторе,
+                напиши стили и посмотри результат!
+            </p>
+
+            <a href="code.html?lesson=2" class="editor-button">
+                Открыть онлайн-редактор →
+            </a>
+
+        </div>
+
+        <a href="lessons.html" class="next-lesson">
+            ← Вернуться ко всем урокам
+        </a>
+
+    </div>
+
+<script src="stats.js"></script>
+<script src="quiz.js"></script>
+
+
+<script src="translations.js"></script>
+</body>
+</html>

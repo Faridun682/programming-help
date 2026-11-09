@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <script src="theme.js"></script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Programer AI | Programer Help</title>
+    <link rel="icon" type="image/png" href="./image.png">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', Arial, sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+
+        /* ---------- Шапка (как на главной) ---------- */
+        .site-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.25rem 2rem;
+            background-color: #ffffff;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo-area { display: flex; align-items: center; gap: 12px; }
+
+        .logo-img {
+            width: 40px;
+            height: 40px;
+            object-fit: cover;
+            border-radius: 8px;
+            background-color: #e2e8f0;
+        }
+
+        .site-title { font-size: 1.25rem; font-weight: 700; color: #1e293b; letter-spacing: -0.02em; }
+
+        .nav-menu { display: flex; gap: 24px; }
+
+        .nav-link {
+            text-decoration: none;
+            color: #64748b;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: color 0.2s ease;
+            position: relative;
+            padding: 4px 0;
+        }
+
+        .nav-link:hover, .nav-link.active { color: #2563eb; }
+
+        .nav-link.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: #2563eb;
+            border-radius: 2px;
+        }
+
+        /* ---------- Страница ИИ ---------- */
+        .ai-wrap { max-width: 860px; margin: 0 auto; padding: 28px 20px 40px; }
+
+        .ai-head { text-align: center; margin-bottom: 18px; }
+        .ai-head h1 { font-size: 2rem; letter-spacing: -0.02em; }
+        .ai-head p { color: #64748b; margin-top: 6px; }
+
+        .chat {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            height: calc(100vh - 250px);
+            min-height: 460px;
+            overflow: hidden;
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            padding: 14px 18px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .toolbar label { font-weight: 600; font-size: 0.95rem; display: flex; align-items: center; gap: 8px; }
+
+        select {
+            padding: 9px 12px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            color: #0f172a;
+            font: inherit;
+            cursor: pointer;
+        }
+
+        .ghost-btn {
+            background: #f1f5f9;
+            color: #334155;
+            border: none;
+            border-radius: 8px;
+            padding: 9px 14px;
+            font: inherit;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .ghost-btn:hover { background: #e2e8f0; }
+
+        #messages { flex: 1; overflow-y: auto; padding: 18px; scroll-behavior: smooth; }
+
+        .msg { display: flex; gap: 10px; margin-bottom: 16px; align-items: flex-start; }
+        .msg.user { flex-direction: row-reverse; }
+
+        .avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            background: #dbeafe;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            flex: none;
+        }
+
+        .bubble {
+            padding: 12px 15px;
+            border-radius: 14px;
+            line-height: 1.6;
+            max-width: 85%;
+            min-width: 0;
+            overflow-wrap: anywhere;
+        }
+
+        .msg.ai .bubble { background: #f1f5f9; border-top-left-radius: 4px; }
+        .msg.user .bubble { background: #2563eb; color: #ffffff; border-top-right-radius: 4px; white-space: pre-wrap; }
+        .msg.error .bubble { background: #fee2e2; color: #991b1b; }
+
+        .bubble p { margin: 0 0 8px; }
+        .bubble p:last-child, .bubble ul:last-child, .bubble ol:last-child { margin-bottom: 0; }
+        .bubble ul, .bubble ol { margin: 0 0 8px 22px; }
+
+        .bubble code.inline {
+            background: #e2e8f0;
+            padding: 1px 6px;
+            border-radius: 5px;
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 0.9em;
+        }
+
+        .codebox { margin: 8px 0; border-radius: 10px; overflow: hidden; background: #0f172a; }
+
+        .codehead {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 10px;
+            background: #1e293b;
+            color: #94a3b8;
+            font-size: 12px;
+        }
+
+        .codehead .btns { display: flex; gap: 6px; }
+
+        .codehead button, .codehead a {
+            background: #334155;
+            color: #e2e8f0;
+            border: none;
+            border-radius: 5px;
+            padding: 4px 9px;
+            font: inherit;
+            cursor: pointer;
+            text-decoration: none;
+        }
+
+        .codehead a { background: #2563eb; color: #fff; font-weight: 600; }
+
+        .codebox pre {
+            padding: 12px 14px;
+            overflow-x: auto;
+            color: #e2e8f0;
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 14px;
+            line-height: 1.55;
+        }
+
+        .typing { display: inline-flex; gap: 5px; padding: 6px 2px; }
+
+        .typing span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #94a3b8;
+            animation: blink 1.2s infinite ease-in-out;
+        }
+
+        .typing span:nth-child(2) { animation-delay: 0.2s; }
+        .typing span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes blink { 0%, 80%, 100% { opacity: 0.25; transform: scale(0.85); } 40% { opacity: 1; transform: scale(1); } }
+
+        #chips { display: flex; gap: 8px; flex-wrap: wrap; padding: 0 18px 12px; }
+
+        #chips button {
+            background: #eff6ff;
+            color: #1d4ed8;
+            border: 1px solid #bfdbfe;
+            border-radius: 20px;
+            padding: 7px 13px;
+            font: inherit;
+            font-size: 0.88rem;
+            cursor: pointer;
+        }
+
+        #chips button:hover { background: #dbeafe; }
+
+        .input-area { display: flex; gap: 10px; padding: 14px 18px; border-top: 1px solid #e2e8f0; align-items: flex-end; }
+
+        textarea {
+            flex: 1;
+            min-width: 0;
+            resize: none;
+            max-height: 150px;
+            padding: 12px 14px;
+            border-radius: 10px;
+            border: 1px solid #cbd5e1;
+            background: #f8fafc;
+            color: #0f172a;
+            font: inherit;
+            line-height: 1.4;
+        }
+
+        textarea:focus, select:focus { outline: 2px solid #93c5fd; border-color: #2563eb; }
+
+        #send {
+            padding: 12px 22px;
+            background: #2563eb;
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            font: inherit;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s ease;
+        }
+
+        #send:hover { background: #1d4ed8; }
+        #send:disabled { background: #94a3b8; cursor: wait; }
+
+        .note { text-align: center; color: #94a3b8; font-size: 0.8rem; padding: 0 18px 12px; }
+
+        @media (max-width: 900px) {
+            .site-header { flex-wrap: wrap; gap: 12px; padding: 1rem; }
+            .nav-menu { gap: 14px; flex-wrap: wrap; }
+        }
+
+        @media (max-width: 640px) {
+            .site-header { flex-direction: column; text-align: center; }
+            .nav-menu { justify-content: center; }
+            .ai-wrap { padding: 14px 10px 24px; }
+            .ai-head h1 { font-size: 1.6rem; }
+            .chat { height: calc(100vh - 300px); min-height: 420px; border-radius: 12px; }
+            .bubble { max-width: 92%; }
+            .toolbar { padding: 10px 12px; }
+            #messages { padding: 12px; }
+            .input-area { padding: 10px 12px; }
+        }
+    </style>    
+</head>
+
+<body>
+
+    <header class="site-header">
+        <div class="logo-area">
+            <img class="logo-img" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSlIMkW2sQCtVgzfKbCzhDdvqwTq5pyQwTCG8jIhIrm2g&s=10" alt="Logo">
+            <h1 class="site-title">My Web site</h1>
+        </div>
+        <nav class="nav-menu">
+            <a href="index.html" class="nav-link">Главная</a>
+            <a href="lessons.html" class="nav-link">Уроки</a>
+            <a href="cheatsheet.html" class="nav-link">Шпаргалка</a>
+            <a href="ai.html" class="nav-link active">Programer AI</a>
+            <a href="about.html" class="nav-link">О сайте</a>
+            <a href="help.html" class="nav-link">Помощь</a>
+            <a href="contacts.html" class="nav-link">Контакты</a>
+        </nav>
+    </header>
+
+    <main class="ai-wrap">
+
+        <div class="ai-head">
+            <h1>🤖 Programer AI</h1>
+            <p>Умный помощник по программированию: объяснит тему, найдёт ошибку в коде и подскажет решение.</p>
+        </div>
+
+        <div class="chat">
+
+            <div class="toolbar">
+                <label for="model">
+                    Модель:
+                    <select id="model">
+                        <option value="openai">GPT</option>
+                        <option value="anthropic">Claude</option>
+                        <option value="google">Gemini</option>
+                        <option value="x-ai">Grok</option>
+                    </select>
+                </label>
+                <button class="ghost-btn" id="clear" type="button">🗑 Очистить чат</button>
+            </div>
+
+            <div id="messages" aria-live="polite"></div>
+
+            <div id="chips"></div>
+
+            <div class="input-area">
+                <textarea id="question" rows="1" placeholder="Напиши свой вопрос..." maxlength="5000"></textarea>
+                <button id="send" type="button">Отправить</button>
+            </div>
+
+            <div class="note">Enter — отправить, Shift+Enter — новая строка. ИИ может ошибаться, важное проверяй.</div>
+        </div>
+
+    </main>
+
+<script>
+(function () {
+
+    var STORAGE = "ph_ai_chat";
+    var MODEL_KEY = "ph_ai_model";
+
+    var messagesBox = document.getElementById("messages");
+    var input = document.getElementById("question");
+    var sendBtn = document.getElementById("send");
+    var modelSelect = document.getElementById("model");
+    var chips = document.getElementById("chips");
+
+    var history = [];
+    var busy = false;
+
+    var SUGGESTIONS = [
+        "Что такое переменная в JavaScript?",
+        "Как выровнять блок по центру в CSS?",
+        "Чем let отличается от const?",
+        "Объясни, что делает тег <form>"
+    ];
+
+    var WELCOME = "Привет! Я Programer AI. Чем могу помочь с программированием? Можешь спросить про HTML, CSS, JavaScript или прислать код, в котором нужно найти ошибку.";
+
+    // ---------- сохранение ----------
+
+    function load() {
+        try {
+            var data = JSON.parse(localStorage.getItem(STORAGE) || "[]");
+            return Array.isArray(data) ? data : [];
+        } catch (e) { return []; }
+    }
+
+    function save() {
+        try { localStorage.setItem(STORAGE, JSON.stringify(history.slice(-30))); } catch (e) {}
+    }
+
+    // ---------- ссылки «Попробовать» для кода ----------
+
+    var DEF_CSS_HTML = '<h1>Заголовок</h1>\n<p>Обычный абзац текста.</p>\n<div class="box">\n    <h2>Карточка</h2>\n    <p>Текст внутри блока.</p>\n</div>\n<button class="btn">Кнопка</button>';
+    var DEF_JS_HTML = '<h1 id="title">Привет!</h1>\n<p id="out"></p>\n<button id="btn">Нажми на меня</button>';
+
+    function encode(obj) {
+        var bytes = new TextEncoder().encode(JSON.stringify(obj));
+        var bin = "";
+        for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
+        return encodeURIComponent(btoa(bin));
+    }
+
+    function tryLink(lang, code) {
+        var project;
+        var tab;
+
+        if (lang === "html") { project = { h: code, c: "", j: "" }; tab = "html"; }
+        else if (lang === "css") { project = { h: DEF_CSS_HTML, c: code, j: "" }; tab = "css"; }
+        else if (lang === "js" || lang === "javascript") { project = { h: DEF_JS_HTML, c: "", j: code }; tab = "javascript"; }
+        else return null;
+
+        return "code.html?code=" + encode(project) + "&tab=" + tab;
+    }
+
+    function copyText(text, done) {
+        function fallback() {
+            var ta = document.createElement("textarea");
+            ta.value = text;
+            ta.style.cssText = "position:fixed;opacity:0";
+            document.body.appendChild(ta);
+            ta.select();
+            var ok = false;
+            try { ok = document.execCommand("copy"); } catch (e) {}
+            ta.remove();
+            done(ok);
+        }
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).then(function () { done(true); }, fallback);
+        } else {
+            fallback();
+        }
+    }
+
+    // ---------- безопасное оформление ответа ИИ (без innerHTML) ----------
+
+    function inline(text, parent) {
+        var parts = text.split(/(`[^`]+`|\*\*[^*]+\*\*)/);
+
+        parts.forEach(function (part) {
+            if (!part) return;
+
+            if (part.length > 2 && part.charAt(0) === "`" && part.charAt(part.length - 1) === "`") {
+                var c = document.createElement("code");
+                c.className = "inline";
+                c.textContent = part.slice(1, -1);
+                parent.appendChild(c);
+            } else if (part.length > 4 && part.indexOf("**") === 0 && part.slice(-2) === "**") {
+                var b = document.createElement("strong");
+                b.textContent = part.slice(2, -2);
+                parent.appendChild(b);
+            } else {
+                parent.appendChild(document.createTextNode(part));
+            }
+        });
+    }
+
+    function renderText(text, box) {
+
+        var lines = text.split("\n");
+        var i = 0;
+
+        while (i < lines.length) {
+
+            var line = lines[i];
+
+            if (!line.trim()) { i++; continue; }
+
+            var listMatch = line.match(/^\s*([-*]|\d+\.)\s+/);
+
+            if (listMatch) {
+                var ordered = /\d/.test(listMatch[1]);
+                var list = document.createElement(ordered ? "ol" : "ul");
+
+                while (i < lines.length && /^\s*([-*]|\d+\.)\s+/.test(lines[i])) {
+                    var li = document.createElement("li");
+                    inline(lines[i].replace(/^\s*([-*]|\d+\.)\s+/, ""), li);
+                    list.appendChild(li);
+                    i++;
+                }
+
+                box.appendChild(list);
+                continue;
+            }
+
+            var p = document.createElement("p");
+            var first = true;
+
+            while (i < lines.length && lines[i].trim() && !/^\s*([-*]|\d+\.)\s+/.test(lines[i])) {
+                if (!first) p.appendChild(document.createElement("br"));
+                inline(lines[i].replace(/^#{1,6}\s+/, ""), p);
+                first = false;
+                i++;
+            }
+
+            box.appendChild(p);
+        }
+    }
+
+    function codeBlock(raw, box) {
+
+        var m = raw.match(/^([\w+#-]*)\n([\s\S]*)$/);
+        var lang = m ? m[1].toLowerCase() : "";
+        var code = (m ? m[2] : raw).replace(/\n$/, "");
+
+        var wrap = document.createElement("div");
+        wrap.className = "codebox";
+
+        var head = document.createElement("div");
+        head.className = "codehead";
+
+        var label = document.createElement("span");
+        label.textContent = lang || "код";
+        head.appendChild(label);
+
+        var btns = document.createElement("div");
+        btns.className = "btns";
+
+        var copyBtn = document.createElement("button");
+        copyBtn.type = "button";
+        copyBtn.textContent = "Копировать";
+        copyBtn.onclick = function () {
+            copyText(code, function (ok) {
+                copyBtn.textContent = ok ? "Скопировано ✓" : "Не удалось";
+                setTimeout(function () { copyBtn.textContent = "Копировать"; }, 1500);
+            });
+        };
+        btns.appendChild(copyBtn);
+
+        var link = tryLink(lang, code);
+
+        if (link) {
+            var tryBtn = document.createElement("a");
+            tryBtn.href = link;
+            tryBtn.textContent = "▶ Попробовать";
+            btns.appendChild(tryBtn);
+        }
+
+        head.appendChild(btns);
+
+        var pre = document.createElement("pre");
+        pre.textContent = code;
+
+        wrap.appendChild(head);
+        wrap.appendChild(pre);
+        box.appendChild(wrap);
+    }
+
+    function renderRich(text, box) {
+        text.split("```").forEach(function (part, i) {
+            if (i % 2 === 1) codeBlock(part, box);
+            else renderText(part, box);
+        });
+    }
+
+    // ---------- сообщения на экране ----------
+
+    function scrollDown() {
+        messagesBox.scrollTop = messagesBox.scrollHeight;
+    }
+
+    function addMessage(role, text) {
+
+        var msg = document.createElement("div");
+        msg.className = "msg " + (role === "error" ? "ai error" : role);
+
+        var avatar = document.createElement("div");
+        avatar.className = "avatar";
+        avatar.textContent = role === "user" ? "🙂" : "🤖";
+
+        var bubble = document.createElement("div");
+        bubble.className = "bubble";
+
+        if (role === "user") bubble.textContent = text;
+        else if (role === "error") bubble.textContent = text;
+        else renderRich(text, bubble);
+
+        msg.appendChild(avatar);
+        msg.appendChild(bubble);
+        messagesBox.appendChild(msg);
+        scrollDown();
+
+        return msg;
+    }
+
+    function addTyping() {
+
+        var msg = document.createElement("div");
+        msg.className = "msg ai";
+
+        var avatar = document.createElement("div");
+        avatar.className = "avatar";
+        avatar.textContent = "🤖";
+
+        var bubble = document.createElement("div");
+        bubble.className = "bubble";
+
+        var dots = document.createElement("div");
+        dots.className = "typing";
+        dots.innerHTML = "<span></span><span></span><span></span>";
+
+        bubble.appendChild(dots);
+        msg.appendChild(avatar);
+        msg.appendChild(bubble);
+        messagesBox.appendChild(msg);
+        scrollDown();
+
+        return msg;
+    }
+
+    function renderChips() {
+
+        chips.innerHTML = "";
+        if (history.length) return;
+
+        SUGGESTIONS.forEach(function (text) {
+            var b = document.createElement("button");
+            b.type = "button";
+            b.textContent = text;
+            b.onclick = function () { send(text); };
+            chips.appendChild(b);
+        });
+    }
+
+    function renderAll() {
+
+        messagesBox.innerHTML = "";
+        addMessage("ai", WELCOME);
+
+        history.forEach(function (m) {
+            addMessage(m.role === "assistant" ? "ai" : "user", m.content);
+        });
+
+        renderChips();
+    }
+
+    function autosize() {
+        input.style.height = "auto";
+        input.style.height = Math.min(input.scrollHeight, 150) + "px";
+    }
+
+    // ---------- отправка ----------
+
+    async function send(forced) {
+
+        if (busy) return;
+
+        var text = (typeof forced === "string" ? forced : input.value).trim();
+        if (!text) return;
+
+        busy = true;
+        sendBtn.disabled = true;
+
+        var previous = history.slice(-10);
+
+        addMessage("user", text);
+        history.push({ role: "user", content: text });
+        save();
+        renderChips();
+
+        input.value = "";
+        autosize();
+
+        var typing = addTyping();
+
+        try {
+            var response = await fetch("/.netlify/functions/chat", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ message: text, model: modelSelect.value, history: previous })
+            });
+
+            var data = {};
+            try { data = await response.json(); } catch (e) { data = {}; }
+
+            if (response.status === 404) throw new Error("NO_SERVER");
+            if (!response.ok) throw new Error(data.error || "Ошибка сервера");
+
+            typing.remove();
+            addMessage("ai", data.reply);
+            history.push({ role: "assistant", content: data.reply });
+            save();
+
+        } catch (error) {
+
+            typing.remove();
+
+            if (error.message === "NO_SERVER") {
+                addMessage("error", "Сервер ИИ пока не подключён. Владельцу сайта: функции Netlify не работают, если загружать папку перетаскиванием. Подключи сайт через GitHub или Netlify CLI.");
+            } else if (error.name === "TypeError") {
+                addMessage("error", "Нет связи с сервером. Проверь интернет и попробуй ещё раз.");
+            } else {
+                addMessage("error", error.message);
+            }
+
+            console.error(error);
+        }
+
+        busy = false;
+        sendBtn.disabled = false;
+        input.focus();
+    }
+
+    // ---------- события ----------
+
+    sendBtn.addEventListener("click", function () { send(); });
+
+    input.addEventListener("keydown", function (e) {
+        if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            send();
+        }
+    });
+
+    input.addEventListener("input", autosize);
+
+    document.getElementById("clear").addEventListener("click", function () {
+        if (!history.length || confirm("Очистить весь чат?")) {
+            history = [];
+            save();
+            renderAll();
+        }
+    });
+
+    modelSelect.addEventListener("change", function () {
+        try { localStorage.setItem(MODEL_KEY, modelSelect.value); } catch (e) {}
+    });
+
+    try {
+        var savedModel = localStorage.getItem(MODEL_KEY);
+        if (savedModel) modelSelect.value = savedModel;
+    } catch (e) {}
+
+    history = load();
+    renderAll();
+
+})();
+</script>
+
+
+<script src="translations.js"></script>
+</body>
+</html>
